@@ -1,0 +1,164 @@
+<template>
+<div style="position:relative">
+  <Toptitle :Title="Title" />
+  <div style="margin:0 20px">
+  <div class="div_status">
+      <span>上架</span>  
+      <span>下架</span>      
+  </div>
+      <div style="margin:10px 0;">
+        <Row>
+        <Col span="8">
+            <label for="" class="laber16" >酒店名称</label>
+            <Input v-model="hotelName" placeholder="请输入产品名称" style="width: 250px"></Input>
+        </Col>
+        <Col span="8">
+            <label for="" class="laber16">酒店编码</label>
+            <Input v-model="hotelCode" placeholder="请输入产品编码" style="width: 250px"></Input>
+            <!-- <label for="" class="laber16">上下架</label>
+            <Select v-model="productCode" style="width:250px;">
+                <Option  value="1" key="1" @click.native="grabble('1')">上架</Option>
+                <Option  value="0" key="0" @click.native="grabble('0')">下架</Option>
+            </Select>  -->
+        </Col>
+        <Col span="8">
+            <Button type="success" @click="grabble">搜&nbsp;&nbsp;&nbsp;&nbsp;索</Button>
+        </Col>
+        </Row>
+      </div>
+      <hotelList   @Page="Page" :pageSize="pageSize"  :DataList="DataList" />  
+      <Spin size="large" fix v-if="spinShow"></Spin>
+  </div>
+</div>
+
+</template>
+
+<script>
+import Qrcode from "v-qrcode";
+import E from "wangeditor";
+import Toptitle from "./../Toptitle";
+import hotelList from "./hotelList";
+
+export default {
+  data() {
+    return {
+      modal1: false,
+      qrCls: "qrcode",
+      spinShow: false,
+      editorContent: "",
+      Title: "酒店信息",
+      DataList: [],
+      pageSize: 0,
+      pageNum: 1,
+      hotelName: null,
+      hotelCode: null,
+      numbers: null
+    };
+  },
+  components: {
+    Toptitle,
+    hotelList,
+    Qrcode
+  },
+  methods: {
+    ok() {},
+    cancel() {},
+    change() {
+      this.first();
+    },
+    Page(res) {
+      if (res.break == false) {
+        this.pageNum = res.page;
+        this.first();
+      } else {
+        this.pageNum = res.page;
+        this.first();
+      }
+      console.log(res);
+    },
+    grabble0() {
+      this.pageNum = 1;
+      this.hotelCode = "";
+      this.hotelName = "";
+      this.first(); 
+    },
+    // 搜索
+    grabble() {
+      this.pageNum = 1;
+      this.first();
+    },
+    // 酒店列表
+    first() {
+      this.spinShow = true;
+      let qs = require("qs");
+      console.log(this.productName);
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/hotel/getList`, {
+          params: {
+            pageNum: this.pageNum,
+            pageSize: 4,
+            hotelName: this.hotelName,
+            hotelCode: this.hotelCode
+          }
+        })
+        .then(res => {
+          if(res.errorCode == 200){
+            this.DataList = res.data.list;
+            console.log(this.DataList);
+            this.pageSize = res.data.total;
+            this.numbers = this.pageNum;
+            this.spinShow = false;
+          }else if(res.errorCode == 303){
+            this.$Message.error(res.message);
+            this.$emit("Logins", false);
+          }else{
+            this.$Message.error(res.message);
+          }
+          
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    }
+  },
+  mounted() {
+    this.first();
+  }
+};
+</script>
+
+<style  lang="scss" scoped>
+.code {
+  height: 40px;
+  width: 100%;
+  margin: 0 auto;
+  background: #eee;
+  span {
+    height: 100%;
+    display: inline-block;
+    width: 140px;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    text-align: center;
+    line-height: 40px;
+    cursor: pointer;
+  }
+}
+
+.div_status {
+  width: 100%;
+  height: 40px;
+  line-height: 40px;
+  span {
+    display: inline-block;
+    text-indent: 20px;
+    background-image: url("../../assets/Commodity/shangjia.png");
+    background-repeat: no-repeat;
+    background-position-y: 8px;
+  }
+  span:nth-child(2) {
+    background-image: url("../../assets/Commodity/xiajia.png");
+  }
+}
+</style>

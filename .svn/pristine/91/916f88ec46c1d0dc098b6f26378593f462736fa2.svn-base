@@ -1,0 +1,299 @@
+<template>
+    <div>
+        <Toptitle :Title="Title" />
+        <div>
+            <Row>
+                <Col span="8">&nbsp;</Col>
+                <Col span="8">
+                    <label for="">手机号</label>
+                    <Input v-model="mobile" placeholder="请输入手机号" style="width: 250px"></Input>
+                    <Button type="success" @click="grabble">搜索</Button>
+                </Col>
+                <Col span="8"> &nbsp;</Col>
+            </Row>
+            <div>
+                <div class="ticketList">
+                    <Table style="margin:0 auto;" border :columns="columns1" :data="tableData"></Table>
+                </div>
+                <Modal
+                    v-model="modal1"
+                    title="退房"
+                    @on-cancel="cancel">
+                    <h3>选择退房时间：</h3>
+                    <RadioGroup v-model="datePicker" type="button" size="large">
+                        <!-- <Radio v-for="(item,index) in timeList" :key="index" :label="item.time" @click="comptime"></Radio> -->
+                        <Radio  label="2018-7-13"></Radio>
+                        <Radio label="2018-7-14"></Radio>
+                        <Radio label="2018-7-15"></Radio>
+                        <Radio label="2018-7-16"></Radio>
+                    </RadioGroup>
+                    <h3>退款金额：{{refundAmount}}</h3>
+                    <div slot="footer">
+                        <Button type="text" size="large" @click="cancel">取消</Button>
+                        <Button type="primary" size="large" :loading="addLoading" @click="ok">确认</Button>
+                    </div>
+                </Modal>
+            </div>
+        </div>
+    </div>
+</template>
+<script>
+import Toptitle from "./../Toptitle";
+import { getDate} from "../../js/public";
+export default {
+    components: {
+        Toptitle,
+    },
+    data() {
+        return {
+            Title: "酒店退房",
+            mobile: "",
+            datePicker: "",
+            modal1: false,
+            addLoading: false,
+            refundAmount: "",
+            currentdate: "",
+            endDate: "",
+            timeList: [],
+            tableData: [],
+            columns1: [
+                 {
+                    title: "订单号",
+                    key: "orderNo",
+                    align: "center",
+                    width: 100,
+                    fixed: "left",
+                },
+                {
+                    title: "订单类型",
+                    key: "orderType",
+                    width: 100,
+                    align: "center"
+                },
+                {
+                    title: "订单金额",
+                    key: "orderPrice",
+                    width: 100,
+                    align: "center",
+                    render(h, params) {
+                        return params.row.orderPrice + "元";
+                    }
+                },
+                {
+                    title: "订单状态",
+                    key: "status",
+                    width: 100,
+                    align: "center",
+                    render: (h, params) => {
+                        for (let i of this.cityList) {
+                        if (i.dictValue == params.row.status) {
+                            return i.dictExplain;
+                        }
+                        }
+                    }
+                },
+                {
+                    title: "支付方式",
+                    key: "payType",
+                    width: 100,
+                    align: "center",
+                    render(h, params) {
+                        if (params.row.payType == "ALIPAY") {
+                        return "App支付宝支付";
+                        } else if(params.row.payType == "WECHAT"){
+                        return "微信支付";
+                        } else if(params.row.payType == "UNIONPAY"){
+                        return "银联支付"
+                        }
+                    }
+                },
+                {
+                    title: "支付金额",
+                    key: "payAmount",
+                    width: 100,
+                    align: "center",
+                    render(h, params) {
+                        return params.row.payAmount + "元";
+                    }
+                },
+                {
+                    title: "支付时间",
+                    key: "payTime",
+                    width: 100,
+                    align: "center",
+                    render(h, params) {
+                        return getDate(params.row.payTime);
+                    }
+                },
+                {
+                    title: "预定房间数量",
+                    key: "roomSum",
+                    width: 100,
+                    align: "center"
+                },
+                {
+                    title: "酒店名称",
+                    key: "hotelName",
+                    width: 100,
+                    align: "center"
+                },
+                {
+                    title: "真实姓名",
+                    key: "realname",
+                    width: 100,
+                    align: "center"
+                },
+                {
+                    title: "联系人手机号",
+                    key: "customerMobile",
+                    width: 100,
+                    align: "center"
+                },
+                {
+                    title: "下单用户手机号",
+                    key: "mobile",
+                    width: 100,
+                    align: "center"
+                },
+                {
+                    title: "用户姓名",
+                    key: "userName",
+                    width: 100,
+                    align: "center"
+                },
+                {
+                    title: "入住时间",
+                    key: "startDate",
+                    width: 100,
+                    align: "center",
+                    render(h, params) {
+                        return getDate(params.row.startDate);
+                    }
+                },
+                {
+                    title: "退房时间",
+                    key: "endDate",
+                    width: 100,
+                    align: "center",
+                    render(h, params) {
+                        return getDate(params.row.endDate);
+                    }
+                },
+                {
+                    title: "房型名称",
+                    key: "roomName",
+                    width: 100,
+                    align: "center",
+                },
+                {
+                    title: "床型",
+                    key: "bedType",
+                    width: 100,
+                    align: "center",
+                },
+                {
+                    title: "套餐名称",
+                    key: "comboName",
+                    width: 100,
+                    align: "center",
+                },
+                {
+                    title: "操作",
+                    key: "action",
+                    align: "center",
+                    fixed: "right",
+                    width: 100,
+                    render: (h, params) => {
+                    return h("div", [
+                        h(
+                        "Button",
+                        {
+                            props: {
+                            type: "primary",
+                            size: "small"
+                            },
+                            style: {
+                            margin: "3px 5px 3px 0",
+                            },
+                            on: {
+                            click: () => {
+                                this.checkOut(params.index)
+                            }
+                            }
+                        },
+                        "退房"
+                        ),
+                    ]);
+                    }
+                }
+            ]
+        }
+    },
+    methods: {
+        grabble() {
+            // this.modal1 = true;
+            var endTime = "2018-07-15 00:00:00";
+            this.getNowFormatDate();
+            this.comptime(this.currentdate,endTime);
+            this.axios
+                .get(`${this.AjaxUrl}/ty_business/order/getHotelOrderDetail`, {
+                    params: {
+                    mobile: this.mobile
+                    }
+                })
+                .then(res => {
+                    if (res.errorCode == 200) {
+                        this.tableData = res.data;
+                    }else{
+                        console.log(res.errorCode)
+                    }
+                })
+                .catch(err => {});
+        },
+        comptime(beginTime,endTime) {
+
+            var beginTimes = beginTime.substring(0, 10).split('-');
+            var endTimes = endTime.substring(0, 10).split('-');
+
+            beginTime = beginTimes[1] + '-' + beginTimes[2] + '-' + beginTimes[0] + ' ' + beginTime.substring(10, 19);
+            endTime = endTimes[1] + '-' + endTimes[2] + '-' + endTimes[0] + ' ' + endTime.substring(10, 19);
+            var a = (Date.parse(endTime) - Date.parse(beginTime)) / 3600 / 1000;
+            console.log(a);
+            if (a < 24) {
+                alert("endTimeXIAO!");
+            } else if (a >= 24) {
+                console.log(this.endDate);
+            } else if (a == 0) {
+                console.log("时间相等!");
+            } 
+        },
+        getNowFormatDate() {
+            var date = new Date();
+            var seperator1 = "-";
+            var seperator2 = ":";
+            var month = date.getMonth() + 1;
+            var strDate = date.getDate();
+            if (month >= 1 && month <= 9) {
+                month = "0" + month;
+            }
+            if (strDate >= 0 && strDate <= 9) {
+                strDate = "0" + strDate;
+            }
+            this.currentdate = date.getFullYear() + seperator1 + month + seperator1 + strDate
+                    + " " + date.getHours() + seperator2 + date.getMinutes()
+                    + seperator2 + date.getSeconds();
+            return console.log(this.currentdate);
+        },
+        checkOut(index) {
+            this.modal1 = true;
+            this.timeList = this.tableData[index];
+        },
+        cancel() {},
+        ok() {},
+
+    },
+    mounted () {
+        this.getNowFormatDate();
+    }
+}
+</script>

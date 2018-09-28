@@ -1,0 +1,3067 @@
+<template lang='pug'>
+      <div style="background:#f7f7f7;position: relative;">
+            <p class="Title">{{Title}}
+              <span>></span><span class="list">{{list}}</span>
+            </p>
+            //- 酒店
+            <div style="margin:0 auto;width:900px" v-show="firstStep">
+                <div><img style="width:900px;height:130px;" src="../../assets/Home/1.jpg" alt=""></div>
+
+                <div class="InputList" style="margin-top:30px;">
+                  <div>
+                    <label for="">酒店名称</label>
+                    <Input style="width: 70%" v-model="hotelInformation.hotelName" placeholder="名称不超过20字"></Input>
+                  </div>
+                  <div>
+                    <label for="">详细地址</label>
+                    <Input style="width: 70%" v-model="hotelInformation.address"></Input>
+                  </div>
+                </div>      
+                <div class="InputList">
+                  <div>
+                    <label for="">支付方式</label>
+                    <Select v-model="hotelInformation.payType"  style="width: 70%">
+                       <Option  key="0" value="0">在线支付</Option>
+                        //-  <Option  key="1" value="1">在线支付+到店付</Option>  
+                    </Select>
+                  </div>
+                  <div>
+                    <label for="">联系方式</label>
+                    <Input style="width: 70%" v-model="hotelInformation.hotelPhone"></Input>
+                  </div>
+                </div>
+                <div class="InputList">
+                  <Row>
+                    <Col span="12">
+                        <label for="">入住时间</label>
+                        <TimePicker type="time" placeholder="12:00:00" v-model="hotelInformation.inTime" style="width: 70%"></TimePicker>
+                    </Col>
+                    <Col span="12">
+                        <label for="">离店时间</label>
+                        <TimePicker type="time" placeholder="12:00:00" v-model="hotelInformation.outTime" style="width: 70%"></TimePicker>
+                    </Col>
+                  </Row>
+                </div> 
+                <div class="InputList" >
+                  <div>
+                    <label for="">经纬度</label>
+                    <Input v-model="longitudelatitude" placeholder="请点击打开地图"  @on-focus="Positioning"  style="width: 70%"></Input>
+                  </div>
+                  <div>
+                    <label for="">地区</label>
+                    <Select style="width: 23.333%"  v-model="hotelInformation.provinceId">
+                       <Option v-for="item in province"  :key="item.name" :value="item.name">{{item.label }} </Option>
+                    </Select>
+                    <Select style="width: 23.333%" v-model="hotelInformation.cityId">
+                       <Option v-for="item in cityList"  :key="item.name" :value="item.name">{{item.label }} </Option>
+                    </Select>
+                    <Select style="width: 23.333%" v-model="hotelInformation.areaId">
+                       <Option v-for="item in categoryList"  :key="item.name" :value="item.name">{{item.label }} </Option>
+                    </Select>
+                  </div>
+                </div> 
+
+                <div class="InputList">
+                  <div>
+                    <label for="">酒店提示</label>
+                    <Input style="width: 70%" v-model="hotelInformation.remind"></Input>
+                  </div>
+                  <div> 
+                    <label for="">星级</label>
+                    <Select style="width: 70%" clearable v-model="hotelInformation.starLevel">
+                      <Option  key="2" value="2">二星/经济型</Option>
+                      <Option  key="3" value="3">三星/舒适</Option>
+                      <Option  key="4" value="4">四星/高档</Option>
+                      <Option  key="5" value="5">五星豪华</Option>
+                    </Select>
+                  </div>
+                </div>  
+
+                <div class="InputList">
+                  <div v-if="estimate == true"> 
+                    <label for="">是否真实产品</label>
+                    <Select style="width: 70%" v-model="isReally">
+                      <Option  key="1" value="1">是</Option>
+                      <Option  key="0" value="0">否</Option>
+                    </Select>
+                  </div>
+                  <div v-else></div>
+                  <div></div>
+                </div> 
+                 
+                <div class="InputList">
+                  <div>
+                    <label for="">酒店简介</label>
+                    <Input style="width: 70%" type="textarea" placeholder="简介不超过1000字" :rows="4" v-model="hotelInformation.intro"></Input>
+                  </div>
+                </div>             
+                <div class="checkbox"> 
+                   <label class="checkTitle" for="">酒店内设施</label>
+                   <CheckboxGroup v-model="fruit">
+                      <label class="checkTitle" for="">酒店服务：</label>
+                      <Checkbox v-for="item in checkBox[1]" :label="item.hotelItemId" :key="item.hotelItemId">{{item.itemName}}</Checkbox>
+                   </CheckboxGroup>
+                   <CheckboxGroup v-model="fruit">
+                      <label class="checkTitle" for="">休闲娱乐：</label>
+                      <Checkbox v-for="item in checkBox[2]" :label="item.hotelItemId" :key="item.hotelItemId">{{item.itemName}}</Checkbox>
+                   </CheckboxGroup>
+                   <CheckboxGroup v-model="fruit">
+                      <label class="checkTitle" for="">基础设施：</label>
+                      <Checkbox v-for="item in checkBox[3]" :label="item.hotelItemId" :key="item.hotelItemId">{{item.itemName}}</Checkbox>
+                   </CheckboxGroup>
+                </div>
+
+                <div style="padding-top:30px;background:#fff;text-align:center;">
+                  <Button type="success" :loading="hotelLoading" @click="subHotel"> 下一步</Button>
+                  <Spin size="large" fix v-if="spinShow"></Spin>
+                </div>                                            
+                  
+                 <transition  enter-active-class="animated zoomInLeft" leave-active-class="animated zoomOutRight">
+                    <div id="maps" v-show="mapShow"  @click.stop="Stopclosing">
+                       <div class="maptitle">地图
+                          <div @click="ClosetheMap">
+                            <Icon type="close-circled"></Icon>
+                          </div>
+                       </div>
+                       <div id="container">
+                          <div>
+                            <label for="">地图</label>
+                            <input type="text" id="keyword" placeholder="请输入地址"></input>
+                          </div>
+                       </div>
+                       <div class="Btn">
+                         <Button type="success" @click="SubPositioning"  long> 提交</Button>
+                       </div>
+                    </div>
+                </transition>
+            </div> 
+            <div v-show="HotelImg" style="margin:0 auto;width:900px;">
+              <div style="margin-bottom:30px;"><img style="width:900px;height:130px;" src="../../assets/Home/2.jpg" alt=""></div>
+              <div style="background:#fff;padding-left:5px;">
+                <div>
+                  <h3>点击上传海报图片：用于海报链接（宽高比 6：7.5）</h3>
+                    <Upload :before-upload="hotelPosterUpload" :show-upload-list="false" action="//jsonplaceholder.typicode.com/posts/"> 
+                      <img :src="posterImg" style="width:120px;height:150px;">
+                  </Upload>
+                </div>
+                <h3>酒店外景图片 </h3>
+                <div v-for="(list,index) of imgurl1" class="imglist demo-upload-list"> 
+                  <img :src="smallImg(index,1)" style="width:100px">
+                  <div class="demo-upload-list-cover"> 
+                      <Icon type="ios-eye-outline" @click.native="handleView(index,1)"></Icon>
+                      <Icon type="ios-trash-outline" @click.native="handleRemove(index,1)"></Icon>
+                  </div>
+                </div>
+                <Upload multiple style="display:inline-block" :before-upload="handleUpload1" :show-upload-list="false" action="//jsonplaceholder.typicode.com/posts/">
+                    <img src="../../assets/Home/a11.png" style="width:100px;">
+                </Upload>  
+                <h3>内景图片</h3>
+                <div v-for="(list,index) of imgurl2" class="imglist demo-upload-list"> 
+                  <img :src="smallImg(index,2)" style="width:100px">
+                  <div class="demo-upload-list-cover"> 
+                      <Icon type="ios-eye-outline" @click.native="handleView(index,2)"></Icon>
+                      <Icon type="ios-trash-outline" @click.native="handleRemove(index,2)"></Icon>
+                  </div>
+                </div>
+                <Upload multiple style="display:inline-block" :before-upload="handleUpload2" :show-upload-list="false" action="//jsonplaceholder.typicode.com/posts/">
+                    <img src="../../assets/Home/a11.png" style="width:100px;">
+                </Upload>
+                <h3>周边图片</h3>
+                <div v-for="(list,index) of imgurl3" class="imglist demo-upload-list"> 
+                  <img :src="smallImg(index,3)" style="width:100px">
+                  <div class="demo-upload-list-cover"> 
+                      <Icon type="ios-eye-outline" @click.native="handleView(index,3)"></Icon>
+                      <Icon type="ios-trash-outline" @click.native="handleRemove(index,3)"></Icon>
+                  </div>
+                </div>
+                <Upload multiple style="display:inline-block" :before-upload="handleUpload3" :show-upload-list="false" action="//jsonplaceholder.typicode.com/posts/">
+                    <img src="../../assets/Home/a11.png" style="width:100px;">
+                </Upload>
+              </div>
+
+              <div style="padding-top:30px;background:#fff;text-align:center;">
+                  <Button type="success" @click="subHotelImg"> 下一步</Button>
+              </div>
+            </div>          
+            
+            //- 房间
+            <div v-show="SecondStep" style="margin:0 auto;width:900px"> 
+              <div>
+                <img style="width:900px;height:130px;" src="../../assets/Home/3.jpg" alt="">
+              </div>
+              <div style="margin-top:30px;background:#fff"> 
+                //- 房间列表
+                <p class="san_top" >新增房间</p>
+                <div style="text-align:left;text-indent: 20px;"> 
+                    <Button type="success" @click.stop="NewRoom(0)">新增房间</Button>
+                    <Button type="success" @click.stop="NewRoom(1)">新增特价房</Button>
+                </div>
+                <div style="margin-top:30px;" @click.stop="clicktable"> 
+                  <Table border  highlight-row  ref="RowTable" :columns="RoomTop" :data="RoomList"></Table> 
+                </div>
+                <div>                                     
+                    //- <vue-event-calendar :events="demoEvents" @day-changed="handleDayChanged"  @month-changed="handleMonthChanged" ></vue-event-calendar>
+                </div>
+                <transition  enter-active-class="animated zoomInLeft" leave-active-class="animated zoomOutRight">
+                    <div v-show="RoomShow" style="position: absolute;top:0;left:0;width:100%;height:100%;z-index:90;">
+                      <div class="Package" > 
+                          <div class="packageTop"> {{RoomTitle}}
+                            <Button @click="closeRoom" style="float:right;"> <Icon type="close"></Icon></Button>
+                          </div>
+                          <div v-show="roomInt" class="SetMeal" style="margin-top:15px;"> 
+                            //- <div class="InputList">
+                            //-     <div>
+                            //-         <label for="">是否特价房</label>
+                            //-         <Select v-model="hotelRoom.isDiscounts"  style="width: 70%">
+                            //-           <Option  key="0" value="0">否</Option>
+                            //-           <Option  key="1" value="1">是</Option>
+                            //-         </Select>
+                            //-     </div>
+                            //-     <div></div>
+                            //- </div> 
+                            <div class="InputList" v-if="hotelRoom.isDiscounts == '1'">
+                                <div>
+                                  <label for="">特价开始时间</label>
+                                  <DatePicker type="date" style="width: 70%" v-model="priceTime.startDate"></DatePicker>
+                                </div>
+                                <div>
+                                  <label for="">特价结束日期</label>
+                                  <DatePicker type="date" style="width: 70%" v-model="priceTime.endDate"></DatePicker>
+                                </div> 
+                            </div> 
+                            <div class="InputList">
+                              <div>
+                                <label for="">房间名称</label>
+                                <Input style="width: 70%" v-model="hotelRoom.roomName"></Input>
+                              </div>
+                              <div>
+                                <label for="">建筑面积(m²)</label>
+                                <Input style="width: 70%" v-model="hotelRoom.floorArea"></Input>
+                              </div>
+                            </div>      
+                            <div class="InputList">
+                              <div>
+                                <label for="">最大入住人数</label>
+                                <Input style="width: 70%" v-model="hotelRoom.peopleNum"></Input>
+                              </div>
+                              <div>
+                                  <label for="">默认库存</label>
+                                  <Input v-model="hotelRoom.defaultRepertory"  style="width: 70%"></Input>
+                              </div>
+                            </div>
+                            <div class="InputList" >
+                                <div>
+                                    <label for="">有无窗</label>
+                                    <Select v-model="hotelRoom.isWindow"  style="width: 70%">
+                                      <Option  key="0" value="0">无</Option>
+                                      <Option  key="1" value="1">有</Option>
+                                    </Select>
+                                </div>
+                                <div>
+                                  <label for="">有无wifi</label>
+                                    <Select v-model="hotelRoom.isWifi"  style="width: 70%">
+                                      <Option  key="0" value="0">无</Option>
+                                      <Option  key="1" value="1">有</Option>
+                                    </Select>
+                                </div>
+                            </div>
+                            <div class="InputList">
+                                <div>
+                                  <label for="" style="float:left;line-height:47px;">房型</label>
+                                  <Cascader :data="typeSize" v-model="bedTypeArr" style="width: 70%;float:left"></Cascader>
+                                </div>
+                                <div>
+                                    <label for="">序号</label>
+                                    <InputNumber style="width: 70%" v-model="hotelRoom.sort"></InputNumber>
+                                </div>
+                            </div>
+                            <div class="InputList">
+                                <div>
+                                   <label for="">房间详情</label>
+                                   <Input style="width: 80%" type="textarea" :rows="4" v-model="hotelRoom.detail"></Input>
+                                    //-  <Input style="width: 70%" v-model="hotelRoom.detail"></Input>
+                                </div>
+                                //- <div>
+                                //-   <label for="">房型</label>
+                                //-     <Select v-model="hotelRoom.roomType"  style="width: 70%">
+                                //-       <Option  key="0" value="KING_SIZE">大床房</Option>
+                                //-       <Option  key="1" value="DOUBLE_ROOM">双人房</Option>
+                                //-       <Option  key="2" value="FAMILY">家庭房</Option>
+                                //-       <Option  key="3" value="LUXURY">豪华套房</Option>
+                                //-     </Select>
+                                //- </div>
+                            </div>
+                            <div v-show="roomImg_3">
+                              <h3>房间图片 </h3>
+                              <div v-for="(list,index) of roomImgList" class="imglist demo-upload-list"> 
+                                <img :src="smallImg0(index)" style="width:100px">
+                                <div class="demo-upload-list-cover"> 
+                                  <Icon type="ios-eye-outline" @click.native="handleView0(index)"></Icon>
+                                  <Icon type="ios-trash-outline" @click.native="handleRemove0(index)"></Icon>
+                                </div>
+                              </div>
+                              <Upload  style="display:inline-block" :before-upload="handleUploadRoom_h" :show-upload-list="false" action="//jsonplaceholder.typicode.com/posts/">
+                                  <img src="../../assets/Home/a11.png" style="width:100px;">
+                              </Upload>
+                            </div>
+                            <div style="text-align:center;padding:5px 0;margin-top:15px;"> 
+                                <Button type="success" :loading="roomLoading" @click="subRoom"> 下一步</Button>
+                            </div>
+                          </div>
+
+                          <div v-show="roomImg" style="padding:10px 0 0 10px;background:#fff;"> 
+                            <div v-show="roomImg_1">
+                              <h3>房间图片 </h3>
+                              <div v-for="(list,index) of roomImgUrl" class="roomImgUrl demo-upload-list"> 
+                                <img :src="smallImg0_h(index)" style="width:100px">
+                                <div class="demo-upload-list-cover"> 
+                                  <Icon type="ios-eye-outline" @click.native="handleView0(index)"></Icon>
+                                  <Icon type="ios-trash-outline" @click.native="handleRemove0(index)"></Icon>
+                                </div>
+                              </div>
+                              <Upload  style="display:inline-block" :before-upload="handleUploadRoom" :show-upload-list="false" action="//jsonplaceholder.typicode.com/posts/">
+                                  <img src="../../assets/Home/a11.png" style="width:100px;">
+                              </Upload>
+                            </div>
+                              
+                            <div v-show="roomImg_2">
+                              <h3>库存设置 </h3>
+                              <div class="packageList">
+                                <label for="">请选择套餐</label>
+                                <Select class="width70" :on-change="kuPackageList" v-model="repertoryHotelRoomComboId">
+                                    <Option v-for="(item,index) in repertoryPackage"  :key="index" :value="item.hotelRoomComboId" @click.native="kuPackageList(item.hotelRoomId,index)">{{item.comboName}}</Option>
+                                </Select>
+                              </div>
+                              <div style="display: flex;width:100%;">
+                                
+                                <div style="width:520px;">
+                                  <Calendar ref="Calendar" :repertory="repertory" :price="price" :priceDate="priceDate" :oneDayPrice="oneDayPrice" :repertoryList="repertoryList" :markDateMore="arr" v-on:isToday="clickToday" v-on:choseDay="clickDay" v-on:changeMonth="changeDate"></Calendar>
+                                </div>
+                                <div style="min-width:270px;padding-left:20px;">
+                                      <h3>日期：{{time}}</h3>
+                                      <div style="margin:10px 0;">
+                                        <Button :disabled="repertoryDisabled" type="success" @click="repertoryModal">设置默认库存</Button>
+                                      </div>
+                                      <div>
+                                        <label for="">库存：</label> 
+                                        <Input v-model="repertoryNums" style="width: 150px;"></Input>
+                                        <Button type="success" :loading="kuLoading" @click="subRepertory">确定</Button>
+                                      </div>
+                                      <div><br>
+                                        <h4>设置记录：</h4>
+                                        <p v-for="item in shuju" :value="item" :key="item"> {{item}}</p>
+                                      </div>
+                  
+                                </div>
+                              </div>
+                            </div>
+                            <div style="text-align:center;padding:5px 0;margin-top:15px;"> 
+                                <Button type="success" @click="closeRoom"> 下一步</Button>
+                            </div>
+                            
+                          </div>
+                      </div>
+                    </div>
+                </transition>
+
+                //- 库存弹框
+                <Modal v-model="repertoryShow" title="设置默认库存" @on-ok="setRepertory">
+                      <p style="font-size: 14px;"> <span style="font-weight: bold;">{{time}}</span> 的默认库存为 <span style="font-weight: bold;">{{repertory}}</span></p>
+                </Modal>
+                <Modal title="查看大图" v-model="visible">
+                   <div style="text-align:center;">
+                     <img :src="amplification" style="width:100%;">
+                   </div>
+                </Modal>
+                <div style="padding-top:30px;background:#fff;text-align:center;">
+                  <Button type="success" @click="jumpProduct"> 下一步</Button>
+                  //- <Spin size="large" fix v-if="spinShow"></Spin>
+                </div> 
+              </div>
+            </div>
+            //- 套餐   
+            <div v-show="thirdStep" style="margin:0 auto;width:900px">
+                <div><img style="width:900px;height:130px;" src="../../assets/Home/4.jpg" alt=""></div>
+                <div style="margin-top:30px;background:#fff"> 
+                    <div class="san_top"> 新增套餐（必填项）</div>
+                    <div style="margin:0 10px; margin-bottom:8px;font-size:14px;text-indent: 10px;"> 注:门市价大于平台价大于结算价</div>
+                    
+                    <div style="text-align:left;text-indent: 20px;"> 
+                       <Button type="success" @click.stop="Newpackage">新增套餐</Button>
+                    </div>
+                    
+                    <transition  enter-active-class="animated zoomInLeft" leave-active-class="animated zoomOutRight">
+                      <div v-show="PackageShow" style="position: absolute;top:0;left:0;width:100%;height:100%;z-index:90;">
+                        <div class="Package"  @click.stop="Stopclosing"> 
+                           <div class="packageTop"> {{packageTop}}
+                             <Button @click="close" style="float:right;"> <Icon type="close"></Icon></Button>
+                           </div>
+                           <div class="SetMeal"> 
+                              <div v-show="setPackage"> 
+                                <div class="InputList" style="margin-top:10px;">
+                                  <div>
+                                    <label for="">套餐名称</label>
+                                    <Input style="width: 70%" v-model="Package.comboName"></Input>
+                                  </div>
+                                  <div>
+                                    <label for="">是否包含早餐</label>
+                                      <Select v-model="Package.includeBreakfast"  style="width: 70%">
+                                        <Option  key="0" value="0">否</Option>
+                                        <Option  key="1" value="1">单人早餐</Option>
+                                        <Option  key="2" value="2">双人早餐</Option>
+                                        <Option  key="3" value="3">三人早餐</Option>
+                                      </Select>
+                                  </div>
+                                  <div>
+                                    <label for="">退款</label>
+                                    <Select style="width: 70%"   v-model="Package.refundType">
+                                        <Option value="REFUND">可取消</Option>
+                                        <Option value="NO_REFUND">不可取消</Option>
+                                    </Select>
+                                  </div> 
+                                </div> 
+
+                                <div class="InputList" style="margin-top:10px;">
+                                  <div>
+                                    <label for="">门市价</label>
+                                    <Input style="width: 70%" v-model="Package.retailPrice"></Input>
+                                  </div>
+                                  <div>
+                                    <label for="">销售价</label>
+                                    <Input style="width: 70%" v-model="Package.salePrice"></Input>
+                                  </div>
+                                  <div>
+                                    <label for="">结算价</label>
+                                    <Input style="width: 70%" v-model="Package.settlementPrice"></Input>
+                                  </div>
+                                </div>
+                                <div class="InputList" style="margin-top:10px;">
+                                  <div>
+                                    <label for="">平台佣金</label>
+                                    <Input style="width: 70%" v-model="Package.platformCommission"></Input>
+                                  </div>
+                                  <div>
+                                    <label for="">默认代理佣金</label>
+                                    <Input style="width: 70%" v-model="Package.defaultAgentCommission"></Input>
+                                  </div>
+                                  <div>
+                                    <label for="">默认业务佣金</label>
+                                    <Input style="width: 70%" v-model="Package.defaultSaleCommission"></Input>
+                                  </div>
+                                </div> 
+                                <div :style="[isA?styleA: styleB]"> 
+                                  <h3> * 平台销售价 = 结算价 + 平台佣金 + 默认代理佣金 + 默认业务佣金</h3>
+                                </div>
+                                <div class="InputList" >
+                                  <div>
+                                    <label>备注信息</label>
+                                    <Input type="textarea" :rows="4" v-model="Package.remark" placeholder="备注信息不超过30字" class="width70"></Input>
+                                  </div>
+                                </div>
+                                <div style="text-align:center;padding:5px 0;"> 
+                                  <Button type="success" @click="Submitpackage"> 下一步</Button>
+                                </div>
+                              </div>
+                              
+                              //- <!-- 套餐价格 -->
+                              <div v-show="setPrice">
+                                <Tabs value="name1">
+                                    <TabPane label="周价格定制" name="name1">
+                                        //- 价格定制（周）
+                                        <div class="demo-tabs-style1" style="background: #e3e8ee;padding:16px;">
+                                          <Tabs type="card">
+                                              <TabPane v-for="(item,index) in weeksList" :key="index" :label="item.week">
+                                                <Row>
+                                                  <Col span="4">门市价：<span style="color:#ed3f14" v-if="weeksList[index].priceColor == true">{{item.retailPrice}}</span> <span v-else>{{item.retailPrice}}</span></Col>
+                                                  <Col span="4">销售价：<span style="color:#ed3f14" v-if="weeksList[index].priceColor == true">{{item.salePrice}}</span><span v-else>{{item.salePrice}}</span></Col>
+                                                  <Col span="4"> 结算价：<span style="color:#ed3f14" v-if="weeksList[index].priceColor == true">{{item.settlementPrice}}</span><span v-else>{{item.settlementPrice}}</span></Col>
+                                                  <Col span="4">平台佣金：<span style="color:#ed3f14" v-if="weeksList[index].priceColor == true">{{item.platformCommission}}</span><span v-else>{{item.platformCommission}}</span></Col>
+                                                  <Col span="4">默认代理佣金：<span style="color:#ed3f14" v-if="weeksList[index].priceColor == true">{{item.defaultAgentCommission}}</span><span v-else>{{item.defaultAgentCommission}}</span></Col>
+                                                  <Col span="4">默认业务佣金：<span style="color:#ed3f14" v-if="weeksList[index].priceColor == true">{{item.defaultSaleCommission}}</span><span v-else>{{item.defaultSaleCommission}}</span></Col>
+                                                </Row>
+                                              </TabPane>
+                                          </Tabs>
+                                        </div>
+                                        <h4><span style="color:#ed3f14">* 定制价格</span> / <span>* 默认价格</span></h4>
+                                        <div style="border-bottom: 1px solid #e9e9e9;padding:10px 0;margin-bottom:6px;">
+                                            //- <Checkbox :indeterminate="indeterminate" :value="checkAll" @click.prevent.native="handleCheckAll">全选</Checkbox>
+                                        </div>
+                                        <CheckboxGroup v-model="checkAllGroup" @on-change="checkAllGroupChange">
+                                            <Checkbox label="1">星期一</Checkbox>
+                                            <Checkbox label="2">星期二</Checkbox>
+                                            <Checkbox label="3">星期三</Checkbox>
+                                            <Checkbox label="4">星期四</Checkbox>
+                                            <Checkbox label="5">星期五</Checkbox>
+                                            <Checkbox label="6">星期六</Checkbox>
+                                            <Checkbox label="0">星期日</Checkbox>
+                                        </CheckboxGroup>
+                                        <div class="InputList" style="margin-top:10px;">
+                                          <div>
+                                            <label for="">门市价</label>
+                                            <Input style="width: 70%" v-model="PackagePrice.retailPrice"></Input>
+                                          </div>
+                                          <div>
+                                            <label for="">销售价</label>
+                                            <Input style="width: 70%" v-model="PackagePrice.salePrice"></Input>
+                                          </div>
+                                          <div>
+                                            <label for="">结算价</label>
+                                            <Input style="width: 70%" v-model="PackagePrice.settlementPrice"></Input>
+                                          </div>
+                                        </div>
+                                        <div class="InputList" style="margin-top:10px;">
+                                          <div>
+                                            <label for="">平台佣金</label>
+                                            <Input style="width: 70%" v-model="PackagePrice.platformCommission"></Input>
+                                          </div>
+                                          <div>
+                                            <label for="">默认代理佣金</label>
+                                            <Input style="width: 70%" v-model="PackagePrice.defaultAgentCommission"></Input>
+                                          </div>
+                                          <div>
+                                            <label for="">默认业务佣金</label>
+                                            <Input style="width: 70%" v-model="PackagePrice.defaultSaleCommission"></Input>
+                                          </div>
+                                        </div> 
+                                        <div :style="[isC?styleA: styleB]"> 
+                                          <h3> * 平台销售价 = 结算价 + 平台佣金 + 默认代理佣金 + 默认业务佣金</h3>
+                                        </div>
+                                        <div style="text-align:center;margin-top:50px;margin-bottom:10px;">
+                                          <Button  type="success" :loading="weekspriceLoading"  @click="subPackagePrice">提&nbsp;&nbsp;&nbsp;&nbsp;交</Button>&nbsp;&nbsp;
+                                        </div>
+                                    </TabPane>
+                                    <TabPane label="单日价格定制" name="name2">
+                                      <div style="display: flex;width:100%;">
+                                        <div style="width:520px;">
+                                          <Calendar ref="Calendar" :markDateMore="arr" :price="price" :priceDate="priceDate" :oneDayPrice="oneDayPrice" :repertoryList="repertoryList" :time="time" :repertoryNums="repertoryNums" :repertory="repertory" v-on:isToday="clickToday" v-on:choseDay="clickDay" v-on:changeMonth="changeDate"></Calendar>
+                                        </div>
+                                        <div style="min-width:270px;padding-left:20px;">
+                                          <h3>日期：{{time}}</h3>
+                                          <div class="InputList" style="margin-top:10px;">
+                                            <div>
+                                              <label for="">门市价</label>
+                                              <Input style="width: 70%" v-model="PackagePrice.retailPrice"></Input>
+                                            </div>
+                                            <div>
+                                              <label for="">销售价</label>
+                                              <Input style="width: 70%" v-model="PackagePrice.salePrice"></Input>
+                                            </div>
+                                            <div>
+                                              <label for="">结算价</label>
+                                              <Input style="width: 70%" v-model="PackagePrice.settlementPrice"></Input>
+                                            </div>
+                                          </div>
+                                          <div class="InputList" style="margin-top:10px;">
+                                            <div>
+                                              <label for="">平台佣金</label>
+                                              <Input style="width: 70%" v-model="PackagePrice.platformCommission"></Input>
+                                            </div>
+                                            <div>
+                                              <label for="">默认代理佣金</label>
+                                              <Input style="width: 70%" v-model="PackagePrice.defaultAgentCommission"></Input>
+                                            </div>
+                                            <div>
+                                              <label for="">默认业务佣金</label>
+                                              <Input style="width: 70%" v-model="PackagePrice.defaultSaleCommission"></Input>
+                                            </div>
+                                          </div> 
+                                          <div :style="[isC?styleA: styleB]"> 
+                                            <h3> * 平台销售价 = 结算价 + 平台佣金 + 默认代理佣金 + 默认业务佣金</h3>
+                                          </div>
+                                          <div style="text-align:center;margin-top:50px;margin-bottom:10px;">
+                                            <Button  type="success" :loading="daypriceLoading"  @click="subOneDayPrice">提&nbsp;&nbsp;&nbsp;&nbsp;交</Button>&nbsp;&nbsp;
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </TabPane>
+                                </Tabs>
+                                
+                              </div>
+                           </div>
+                        </div>
+                      </div>
+                    </transition>
+                    <div style="margin-top:30px;" @click.stop="clicktable"> 
+                      <Table  highlight-row  ref="currentRowTable" :columns="ProductTop" :data="ProductList"></Table> 
+                    </div>
+                    <div style="padding-top:30px;background:#fff;text-align:center;">
+                      <Button type="success" @click="goBack"> 返回</Button>
+                    </div>
+                </div>
+            </div>
+      </div>
+                                                                                   
+</template>
+
+<script>
+import Updataimg from "./../Updataimg.vue";
+import Calendar from '../vue-calendar-component/index.js';
+import { add0, getDate, withinErrorMargin, hhssmm, accAdd } from "../../js/public.js";
+import "animate.css";
+import E from "wangeditor";
+export default {
+   components: {
+      Updataimg,
+      Calendar
+  },
+  data() {
+    return {
+      auth_id: null,
+      parentId: null,
+      businessUserId: null,
+      estimate: false,
+      hotelLoading: false,
+      kuLoading: false,
+      roomLoading: false,
+      time: "",
+      shuju: [],
+      repertoryNums: "0",
+      repertoryList: [],
+      price: null,
+      oneDayPrice: [],
+      priceDate: [],
+      weeksList: [
+        {
+          num: 1,
+          week: "星期一",
+          retailPrice: 0,
+          salePrice: 0,
+          settlementPrice: 0,
+          platformCommission: 0,
+          defaultAgentCommission: 0,
+          defaultSaleCommission: 0,
+          priceColor: false,
+        },
+        {
+          num: 2,
+          week: "星期二",
+          retailPrice: 0,
+          salePrice: 0,
+          settlementPrice: 0,
+          platformCommission: 0,
+          defaultAgentCommission: 0,
+          defaultSaleCommission: 0,
+          priceColor: false,
+        },
+        {
+          num: 3,
+          week: "星期三",
+          retailPrice: 0,
+          salePrice: 0,
+          settlementPrice: 0,
+          platformCommission: 0,
+          defaultAgentCommission: 0,
+          defaultSaleCommission: 0,
+          priceColor: false,
+        },
+        {
+          num: 4,
+          week: "星期四",
+          retailPrice: 0,
+          salePrice: 0,
+          settlementPrice: 0,
+          platformCommission: 0,
+          defaultAgentCommission: 0,
+          defaultSaleCommission: 0,
+          priceColor: false,
+        },
+        {
+          num: 5,
+          week: "星期五",
+          retailPrice: 0,
+          salePrice: 0,
+          settlementPrice: 0,
+          platformCommission: 0,
+          defaultAgentCommission: 0,
+          defaultSaleCommission: 0,
+          priceColor: false,
+        },
+        {
+          num: 6,
+          week: "星期六",
+          retailPrice: 0,
+          salePrice: 0,
+          settlementPrice: 0,
+          platformCommission: 0,
+          defaultAgentCommission: 0,
+          defaultSaleCommission: 0,
+          priceColor: false,
+        },
+        {
+          num: 0,
+          week: "星期日",
+          retailPrice: 0,
+          salePrice: 0,
+          settlementPrice: 0,
+          platformCommission: 0,
+          defaultAgentCommission: 0,
+          defaultSaleCommission: 0,
+          priceColor: false,
+        },
+      ],
+      arr: [
+        {
+          date: '2018/6/1',
+          className: 'mark1'
+        },
+        {
+          date: '2018/6/2',
+          className: 'mark1'
+        },
+        {
+          date: '2018/6/13',
+          className: 'mark2'
+        }
+      ],
+      typeSize: [
+        {
+          value: 'DOUBLE_ROOM',
+          label: '双人房',
+          children: [
+              {
+                  value: '单人床',
+                  label: '单人床',
+                  children: [
+                    {
+                      value: '1.2m',
+                      label: '1.2m',
+                    },
+                    {
+                      value: '1.35m',
+                      label: '1.35m',
+                    },
+                  ]
+              },
+          ]
+        },
+        {
+          value: 'KING_SIZE',
+          label: '大床房',
+          children: [
+              {
+                  value: '双人床',
+                  label: '双人床',
+                  children: [
+                    {
+                      value: '1.5m',
+                      label: '1.5m',
+                    },
+                    {
+                      value: '1.8m',
+                      label: '1.8m',
+                    },
+                    {
+                      value: '2m',
+                      label: '2m',
+                    },
+                  ]
+              },
+          ]
+        },
+        {
+          value: 'FAMILY',
+          label: '家庭房',
+          children: [
+              {
+                  value: '多床',
+                  label: '多床',
+                  children: [
+                    {
+                      value: '1.2m',
+                      label: '1.2m',
+                    },
+                    {
+                      value: '1.35m',
+                      label: '1.35m',
+                    },
+                    {
+                      value: '1.5m',
+                      label: '1.5m',
+                    },
+                    {
+                      value: '1.8m',
+                      label: '1.8m',
+                    },
+                    {
+                      value: '2m',
+                      label: '2m',
+                    },
+                  ]
+              },
+          ]
+        },
+        {
+          value: 'LUXURY',
+          label: '豪华套房',
+          children: [
+              {
+                  value: '多床',
+                  label: '多床',
+                  children: [
+                    {
+                      value: '1.2m',
+                      label: '1.2m',
+                    },
+                    {
+                      value: '1.35m',
+                      label: '1.35m',
+                    },
+                    {
+                      value: '1.5m',
+                      label: '1.5m',
+                    },
+                    {
+                      value: '1.8m',
+                      label: '1.8m',
+                    },
+                    {
+                      value: '2m',
+                      label: '2m',
+                    },
+                  ]
+              },
+          ]
+        },
+      ],
+      spinShow: false,
+      productInfoShow: false,
+      productInfoShow0: false,
+      fruit: [],
+      Gps: null,
+      checkBox: [],
+      uploadList: [],
+      roomImgUrl: [],
+      roomImgList: [],
+      roomImgId: [],
+      PictureImg: require("../../assets/Home/a11.png"),
+      isA: false,
+      styleA:{
+        color: 'red'
+      },
+      styleB:{ 
+      },
+      style0:{
+        border: 'red 1px solid',
+        borderRadius: '4px',
+        width: '65%'
+      },
+      style1:{ 
+        width: '65%'
+      },
+      isB: false,
+      isC: false,
+      roomInt: true,
+      roomImg: false,
+      roomImg_1: true,
+      roomImg_2: true,
+      roomImg_3: false,
+      posterImg: require("../../assets/Home/a11.png"),
+      imgurl1: [],
+      imgurl2: [],
+      imgurl3: [],
+      hotelImgListId:[],
+      hotelImgListId2:[],
+      hotelImgListId3:[],
+      editorImg: null,
+      hotelId: "",
+      hotelRoomId: "",
+      hotelRoomComboId: "",
+      coverImg: "",
+      isReally: "",
+      hotelInformation: {
+        hotelName: "",
+        hotelPhone: "",
+        longitude: "",
+        latitude: "",
+        provinceId: "",
+        cityId: "",
+        areaId: "",
+        address: "",
+        payType: "0",
+        intro: "",
+        remind: "",
+        inTime: "12:00:00",
+        outTime: "12:00:00",
+        starLevel: ""
+      },
+      bedTypeArr: [],
+      hotelRoom: {
+        roomName: "",
+        floorArea: "",	
+        bedType: "",
+        peopleNum: "",
+        defaultRepertory: "",	
+        detail: "",
+        isWifi: "1",
+        isWindow: "1",
+        bedSize: "",
+        // roomType: "",
+        isDiscounts: "0",
+        sort: null
+      },
+      priceTime: {
+        startDate: "",
+        endDate: ""
+      },
+      Package: {
+        comboName: "",
+        includeBreakfast: "0",
+        retailPrice: 0,
+        salePrice: 0,
+        settlementPrice: 0,
+        platformCommission: 0,
+        defaultAgentCommission: 0,
+        defaultSaleCommission: 0,
+        refundType: "NO_REFUND",
+        remark: ""
+      },
+      setPackage: true,
+      setPrice: false,
+      weekspriceLoading: false,
+      daypriceLoading: false,
+      checkAllGroup: [],
+      indeterminate: false,
+      checkAll: false,
+      lastHotelRoomComboId: "",
+      addPackageNum: 1,
+      PackagePrice: {
+        retailPrice: 0,
+        salePrice: 0,
+        settlementPrice: 0,
+        platformCommission: 0,
+        defaultAgentCommission: 0,
+        defaultSaleCommission: 0,
+      },
+      firstStep: true,
+      HotelImg: false,
+      SecondStep: false,
+      thirdStep: false,
+      RoomShow: false,
+      PackageShow: false,
+      RoomTitle: "新增房间",
+      packageTop: "新增套餐",
+      productId: "",
+      editorContent: "",
+      categoryList: [],
+      cityList: [],
+      province: [],
+      longitudelatitude: "",
+      ZYBtype: false,
+      mapShow: false,
+      Selectmenu: [],
+      repertoryHotelRoomComboId: "",
+      repertoryPackage: [],
+      RoomList: [],
+      RoomTop: [
+        {
+          title: "房间名称",
+          key: "roomName",
+          align: "center",
+          width: 120,
+          render: (h, params) => {
+            let text = params.row.roomName;
+            let color = "";
+            if(params.row.isDiscounts == 1) {
+              color = "#ED3F14";
+            }
+            return h("div", [
+              h(
+                "strong",
+                {
+                  style: {
+                    color: color
+                  },
+                },
+                text
+              )
+            ]);
+          }
+        },
+        {
+          title: "建筑面积(m²)",
+          key: "floorArea",
+          align: "center"
+        },
+        {
+          title: "床型",
+          key: "bedType",
+          align: "center",
+        },
+        {
+          title: "最大入住人数",
+          key: "peopleNum",
+          align: "center"
+        },
+        {
+          title: "默认库存",
+          key: "defaultRepertory",
+          align: "center"
+        },
+        {
+          title: "详情",
+          key: "detail",
+          align: "center"
+        },
+        {
+          title: "库存",
+          key: "repertory",
+          align: "center",
+          render: (h, params) => {
+            return h("div", [
+              h(
+                "Button",
+                {
+                  props: {
+                    type: "success",
+                    size: "small"
+                  },
+                  style: {
+                    marginRight: "5px"
+                  },
+                  on: {
+                    click: () => {
+                      this.editRepertory(params.row.hotelRoomId,params.row.defaultRepertory,params.index);
+                    }
+                  }
+                },
+                "设置"
+              )
+            ])
+          }
+        },
+        {
+          title: "操作",
+          key: "startDate",
+          width: 195,
+          fixed: "right",
+          align: "center",
+          render: (h, params) => {
+            return h("div", [
+              h(
+                "Button",
+                {
+                  props: {
+                    type: "success",
+                    size: "small"
+                  },
+                  style: {
+                    marginRight: "5px"
+                  },
+                  on: {
+                    click: () => {
+                      this.editRoom(params.index);
+                    }
+                  }
+                },
+                "编辑"
+              ),
+              h(
+                "Button",
+                {
+                  props: {
+                    type: "error",
+                    size: "small"
+                  },
+                  style: {
+                    marginRight: "5px"
+                  },
+                  on: {
+                    click: () => {
+                      this.roomRemove(params.index);
+                    }
+                  }
+                },
+                "删除"
+              ),
+              h(
+                "Button",
+                {
+                  props: {
+                    type: "primary",
+                    size: "small"
+                  },
+                  on: {
+                    click: () => {
+                      this.RoomPackage(params.index);
+                      // this.packageremove(params.index);
+                    }
+                  }
+                },
+                "设置套餐"
+              )
+            ]);
+          }
+        }
+      ],
+      ProductList: [],
+      ProductTop: [
+        {
+          title: "套餐名称",
+          key: "comboName",
+          align: "center",
+          width: 140,
+          fixed: "left"
+        },
+        {
+          title: "是否包含早餐",
+          key: "includeBreakfast",
+          align: "center",
+          render: (h, par) => {
+            let num = par.row.includeBreakfast;
+            if (num == 0) {
+              return "否";
+            } else {
+              return "是";
+            }
+          }
+        },
+        {
+          title: "门市价",
+          key: "retailPrice",
+          align: "center"
+        },
+        {
+          title: "销售价",
+          key: "salePrice",
+          align: "center"
+        },
+        {
+          title: "结算价",
+          key: "settlementPrice",
+          align: "center"
+        },
+        {
+          title: "平台佣金",
+          key: "platformCommission",
+          align: "center"
+        },
+        {
+          title: "默认代理佣金",
+          key: "defaultAgentCommission",
+          align: "center"
+        },
+        {
+          title: "默认业务佣金",
+          key: "defaultSaleCommission",
+          align: "center"
+        },
+        {
+          title: "操作",
+          key: "startDate",
+          width: 160,
+          fixed: "right",
+          align: "center",
+          render: (h, params) => {
+            return h("div", [
+              h(
+                "Button",
+                {
+                  props: {
+                    type: "success",
+                    size: "small"
+                  },
+                  style: {
+                    marginRight: "5px"
+                  },
+                  on: {
+                    click: () => {
+                      this.PackageEditor(params.index);
+                    }
+                  }
+                },
+                "编辑"
+              ),
+              h(
+                "Button",
+                {
+                  props: {
+                    type: "error",
+                    size: "small"
+                  },
+                  on: {
+                    click: () => {
+                      this.packageremove(params.index);
+                    }
+                  }
+                },
+                "删除"
+              )
+            ]);
+          }
+        }
+      ],
+      animal: "",
+      Title: "酒店",
+      list: "酒店上新",
+      visible: false,
+      amplification: "",
+      flow: 1,
+      value: "",
+      AvatarUrl:
+        "https://o5wwk8baw.qnssl.com/a42bdcc1178e62b4694c830f028db5c0/avatar",
+      imglist: [],
+      pageageurl: "",
+      pageagetypelist: "",
+      initialization: false,
+      repertory: null,
+      repertoryShow: false,
+      repertoryDisabled: true,
+      repertoryHtml: ""
+    };
+  },
+  created() {
+    function format(date, index) {
+      date = new Date(date);
+      return `${date.getFullYear()}-${date.getMonth() + 1}-${index}`;
+    }
+    this.arr = [
+      {
+        date: format(new Date(), 1),
+        className: 'mark1'
+      },
+      {
+        date: format(new Date(), 2),
+        className: 'mark1'
+      },
+      {
+        date: format(new Date(), 13),
+        className: 'mark2'
+      }
+    ];
+    this.arr2 = [format(new Date(), 23)]
+  },
+  computed: {},
+  methods: {
+    // 库存
+    subRepertory() {
+      if(this.time != ""){
+        this.shuju.push(this.time + " 库存：" + this.repertoryNums)
+      }else {
+        this.error("请选择日期");
+        return false
+      }
+      this.kuLoading = true;
+      let data = {};
+      data.hotelRoomId = this.hotelRoomId;
+      data.rDate = this.time;
+      data.repertory = this.repertoryNums;
+      this.axios
+        .post(`${this.AjaxUrl}/ty_business/hotel/room/repertory/setting`, this.qs.stringify(data))
+        .then(res => {
+          if (res.errorCode == 200) {
+            this.roomRepertory();
+            this.success(res.message);
+            this.kuLoading = false;
+          }else{
+            this.kuLoading = false;
+            this.error(res.message);
+          }
+        })
+        .catch(err => {});
+    },
+    // 默认库存
+    setRepertory() {
+      if(this.time != ""){
+        this.shuju.push(this.time + " 默认库存：" + this.repertory)
+      }else {
+        this.error("请选择日期");
+        return false
+      }
+      let data = {};
+      data.hotelRoomId = this.hotelRoomId;
+      data.rDate = this.time;
+      // data.repertory = this.repertoryNums;
+      this.axios
+        .post(`${this.AjaxUrl}/ty_business/hotel/room/repertory/delete`, this.qs.stringify(data))
+        .then(res => {
+          if (res.errorCode == 200) {
+            this.repertoryShow = false;
+            this.roomRepertory();
+            this.success(res.message);
+          }else{
+            this.error(res.message);
+          }
+        })
+        .catch(err => {});
+    },
+    // 默认库存弹框
+    repertoryModal() {
+      this.repertoryShow = true;
+    },
+    clickDay(data) {
+      console.log('选中了', data); //选中某天
+      this.repertoryDisabled = false;
+      // this.$toast('选中了' + data);
+      let time = data.split("/");
+      let h = time[0];
+      let m = time[1];
+      let d = time[2];
+      if(m < 10){
+        m = "0" + m;
+      }
+      if(d < 10){
+        d = "0" + d;
+      }
+      this.time = h + "-" + m + "-" + d;  
+    },
+    clickToday(data) {
+      console.log('跳到了本月今天', data); //跳到了本月
+    },
+    changeDate(data) {
+      console.log('左右点击切换月份', data); //左右点击切换月份
+    },
+    close() {
+      this.PackageShow = !this.PackageShow;
+      this.deletePackagePrice();
+      this.PackageList(this.hotelRoomId);
+    },
+
+    // 关闭房间弹框
+    closeRoom() {
+      this.RoomShow = !this.RoomShow;
+      this.roomInt = true;
+      this.roomImg = false;
+      this.HotelRoomList();
+    },
+
+    //预览
+    preview() {
+      this.productInfoShow = true;
+      this.$refs.edit.innerHTML = this.editorContent;
+    },
+    preview0() {
+      this.productInfoShow0 = true;
+      this.$refs.edit0.innerHTML = this.Package.detail;
+    },
+
+    //跳转产品页
+    jumpProduct() {
+      let iid = Number(this.auth_id) + 1;
+      console.log(iid);
+      this.$router.push({path: '/merchants/hotelInformation/' + iid});
+    },
+
+    //上架跳转
+    jumpProduct0() {
+      let list = this.ProductList;
+      console.log(list);
+      if(list.length == 0){
+        this.$Modal.confirm({
+            title: '提示信息',
+            content: '<h2>请先添加套餐</h2>',
+            onOk: () => {
+                // this.$Message.info('Clicked ok');
+            },
+            onCancel: () => {
+                // this.$Message.info('Clicked cancel');
+            }
+        });
+      }else{
+        let iid = this.auth_id - 1;
+        let data = {};
+        data.productId = this.productId;
+        this.axios
+          .post(`${this.AjaxUrl}/ty_business/product/putOrOutProduct`, this.qs.stringify(data))
+          .then(res => {
+            if (res.errorCode == 200) {
+              console.log(res);
+              this.success("上架成功");
+              this.$router.push({path: '/merchants/productinformation/' + iid});
+            }else{
+              this.error(res.message);
+            }
+          })
+          .catch(err => {});
+      }
+    },
+
+    smallImg(index,type) {
+      if(type == 1) {
+        return this.imgurl1[index];
+      }else if(type ==2){
+        return this.imgurl2[index];
+      }else if(type ==3){
+        return this.imgurl3[index];
+      }  
+    },
+
+    // 酒店详情
+    hotelImg() {
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/hotel/getDetail`, {
+          params: {
+            hotelId: this.hotelId
+          }
+        })
+        .then(res => {
+          if(res.errorCode == 200) {
+            let productPictureList = res.data.hotelPictureList;
+            this.imglist = [];
+            this.hotelImgListId = [];
+            this.hotelImgListId2 = [];
+            this.hotelImgListId3 = [];
+            for(let i of res.data.exteriorPictureList) {
+                this.imglist.push({ url: i.pictureUrl });
+                this.hotelImgListId.push({ id: i.hotelPictureId });
+            }
+            for(let j of res.data.interiorPictureList) {
+                this.hotelImgListId2.push({ id: i.hotelPictureId });
+            }
+            for(let k of res.data.aroundPictureList) {
+                this.hotelImgListId3.push({ id: i.hotelPictureId });
+            }
+            // for (let i of productPictureList) {
+            //   if(i.pictureType == 1){
+            //     this.imglist.push({ url: i.pictureUrl });
+            //     this.hotelImgListId.push({ id: i.hotelPictureId });
+            //   }else if(i.pictureType == 2){
+            //     this.hotelImgListId2.push({ id: i.hotelPictureId });
+            //   }else if(i.pictureType == 3){
+            //     this.hotelImgListId3.push({ id: i.hotelPictureId });
+            //   }
+            // }
+          }
+        })
+        .catch(err => {});
+    },
+
+    // 上传酒店海报图片
+    hotelPosterUpload(file) {
+      var reader = new FileReader();
+      var _this = this;
+      let data = new FormData();
+      data.append("file", file);
+      this.axios
+        .post(`${this.AjaxUrl}/ty_business/upload`, data)
+        .then(res => {
+          if (res.errorCode == 200) {
+            console.log(res.data);
+            this.coverImg = res.data;
+          }else{
+            this.error("图片上传错误")
+            this.posterImg = require("../../assets/Home/a11.png");
+          }
+        })
+        .catch(err => {});
+      reader.readAsDataURL(file);
+      reader.onload = function(e) {
+        _this.posterImg = this.result;
+      };
+      return false;
+    },
+
+    // 上传酒店图片
+    handleUpload1(file) {
+        var reader = new FileReader();
+        var _this = this;
+        let data = new FormData();
+        data.append("sort", this.imgurl1.length);
+        data.append("hotelId", this.hotelId);
+        data.append("hotelPicture", file);
+        data.append("pictureType", 1);
+        this.axios
+          .post(`${this.AjaxUrl}/ty_business/hotel/picture/upload`, data)
+          .then(res => {
+            if (res.errorCode == 200) {
+              this.imglist.push({ url: res.data });
+              reader.readAsDataURL(file);
+              reader.onload = function(e) {
+              _this.imgurl1.push(this.result);
+              };
+              this.hotelImg();
+            }else{
+              this.error("图片上传错误")
+            }
+            console.log(res.errorCode);
+          })
+          .catch(err => {});  
+    },
+    handleUpload2(file) {
+    
+      var reader = new FileReader();
+      var _this = this;
+      let data = new FormData();
+      data.append("sort", this.imgurl2.length);
+      data.append("hotelId", this.hotelId);
+      data.append("hotelPicture", file);
+      data.append("pictureType", 2);
+        this.axios
+        .post(`${this.AjaxUrl}/ty_business/hotel/picture/upload`, data)
+        .then(res => {
+          if (res.errorCode == 200) {
+            reader.readAsDataURL(file);
+            reader.onload = function(e) {
+            _this.imgurl2.push(this.result);
+            };
+            this.hotelImg();
+          }else{
+            this.error("图片上传错误")
+          }
+          console.log(res.errorCode);
+        })
+        .catch(err => {});
+    },
+    handleUpload3(file) {
+    
+      var reader = new FileReader();
+      var _this = this;
+      let data = new FormData();
+      data.append("sort", this.imgurl3.length);
+      data.append("hotelId", this.hotelId);
+      data.append("hotelPicture", file);
+      data.append("pictureType", 3);
+        this.axios
+        .post(`${this.AjaxUrl}/ty_business/hotel/picture/upload`, data)
+        .then(res => {
+          if (res.errorCode == 200) {
+            reader.readAsDataURL(file);
+            reader.onload = function(e) {
+            _this.imgurl3.push(this.result);
+            };
+            this.hotelImg();
+          }else{
+            this.error("图片上传错误")
+          }
+          console.log(res.errorCode);
+        })
+        .catch(err => {});
+    },
+
+    // 酒店图片放大
+    handleView(index,type) {
+      this.visible = true;
+      if(type == 1){
+        this.amplification = this.imgurl1[index];
+      }else if(type == 2){
+        this.amplification = this.imgurl2[index];
+      }else if(type == 3){
+        this.amplification = this.imgurl3[index];
+      }
+    },
+
+    // 酒店图片删除
+    handleRemove(index,type) {
+      let data = {};
+      let list = [];
+      if(type == 1){
+        data.hotelPictureId = this.hotelImgListId[index].id;
+        list = this.imgurl1;
+      }else if(type ==2){
+        data.hotelPictureId = this.hotelImgListId2[index].id;
+        list = this.imgurl2;
+      }else if(type ==3){
+        data.hotelPictureId = this.hotelImgListId3[index].id;
+        list = this.imgurl3;
+      }
+      this.axios
+        .post(
+          `${this.AjaxUrl}/ty_business/hotel/picture/delete`,
+          this.qs.stringify(data)
+        )
+        .then(res => {
+          if (res.errorCode == 200) {
+            list.splice(index,1);
+          }
+        })
+        .catch(err => {});
+    },
+
+    // 查询房间
+    checkHotelRoom(){
+      let data = {
+          params: {
+            hotelId: this.hotelId,
+            hotelRoomId: this.hotelRoomId
+          }
+        };
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/hotel/room/getList`, data)
+        .then(res => {
+          if (res.errorCode == 200) {
+            let productPictureList = res.data[0].hotelRoomPictures;
+            this.roomImgList = [];
+            this.roomImgId = [];
+            for (let i of productPictureList) {
+              this.roomImgList.push({ url: i.pictureUrl });
+              this.roomImgId.push({ id: i.hotelRoomPictureId });
+            }
+          }else if(res.errorCode == 303){
+            this.error(res.message);
+          }else{
+            this.error(res.message);
+          }
+        })
+        .catch(err => {});
+    },
+    //上传房间图片
+    handleUploadRoom(file) {
+      var reader = new FileReader();
+      var _this = this;
+      let data = new FormData();
+      data.append("sort", this.roomImgList.length);
+      data.append("hotelId", this.hotelId);
+      data.append("hotelRoomId", this.hotelRoomId);
+      data.append("hotelRoomPicture", file);
+      this.axios
+        .post(`${this.AjaxUrl}/ty_business/hotel/room/picture/upload`,data)
+        .then(res => {
+          if (res.errorCode == 200) {
+            // this.roomImgList.push({ url: res.data });
+            this.roomImgId.push({ id: res.data });
+            reader.readAsDataURL(file);
+            reader.onload = function(e) {
+            _this.roomImgUrl.push({ url: this.result });
+            // _this.PictureImg = this.result;
+            };
+            // this.checkHotelRoom();
+          }else{
+            this.error(res.message);
+          }
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+    //编辑时上传房间图片
+    handleUploadRoom_h(file) {
+      var reader = new FileReader();
+      var _this = this;
+      let data = new FormData();
+      data.append("sort", this.roomImgList.length);
+      data.append("hotelId", this.hotelId);
+      data.append("hotelRoomId", this.hotelRoomId);
+      data.append("hotelRoomPicture", file);
+      this.axios
+        .post(`${this.AjaxUrl}/ty_business/hotel/room/picture/upload`,data)
+        .then(res => {
+          if (res.errorCode == 200) {
+            this.roomImgList.push({ url: res.data });
+            reader.readAsDataURL(file);
+            reader.onload = function(e) {
+            _this.roomImgUrl.push({ url: this.result });
+            // _this.PictureImg = this.result;
+            };
+            this.checkHotelRoom();
+          }else{
+            this.error(res.message);
+          }
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+    smallImg0(index) {
+      if(this.roomImgUrl[index].url != "") {
+        return this.roomImgUrl[index].url;
+      }else {
+        return this.ImgUrl + this.roomImgList[index].url + "_small.jpg";
+      }
+    },
+    smallImg0_h(index) {
+        return this.roomImgUrl[index].url;
+    },
+    //房间图片放大
+    handleView0(index) {
+      this.visible = true;
+      if(this.roomImgUrl[index].url != "") {
+        this.amplification = this.roomImgUrl[index].url;
+      }else {
+        this.amplification = this.ImgUrl + this.roomImgList[index].url + "_small.jpg";
+      }
+    },
+
+    //房间图片删除
+    handleRemove0(index) {
+      let data = {};
+      data.hotelRoomPictureId	 = this.roomImgId[index].id;
+      this.axios
+        .post(
+          `${this.AjaxUrl}/ty_business/hotel/room/picture/delete`,
+          this.qs.stringify(data)
+        )
+        .then(res => {
+          if (res.errorCode == 200) {
+            console.log(res.message);
+              this.roomImgList.splice(index,1);
+              this.roomImgUrl.splice(index,1);
+              this.roomImgId.splice(index,1);
+              // this.uploadList.pop("a");
+          }else{
+            this.error(res.message);
+          }
+        })
+        .catch(err => {});
+    },
+
+    // 获取房间列表
+    HotelRoomList() {
+      let data = {
+          params: {
+            hotelId: this.hotelId
+          }
+        };
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/hotel/room/getList`, data)
+        .then(res => {
+          if (res.errorCode == 200) {
+            this.RoomList = res.data;
+            if(this.RoomTitle == "新增房间"){
+               this.hotelRoomId = res.data[res.data.length-1].hotelRoomId;
+               this.repertory = res.data[res.data.length-1].defaultRepertory;
+            }
+            console.log(this.hotelRoomId);
+            this.PackageList(this.hotelRoomId);
+          }else if(res.errorCode == 303){
+            this.error(res.message);
+          }else{
+            this.error(res.message);
+          }
+        })
+        .catch(err => {});
+    },
+
+    // 房间弹框
+    NewRoom(type) {
+      if(type == 0) {
+        this.hotelRoom.isDiscounts = "0";
+      } else if(type == 1) {
+        this.hotelRoom.isDiscounts = "1";
+      }
+      this.repertoryDisabled = true;
+      this.RoomShow = true;
+      this.roomInt = true;
+      this.roomImg = false;
+      this.roomImg_1 = true;
+      this.roomImg_2 = true;
+      this.roomImg_3 = false;
+      this.RoomTitle = "新增房间";
+      this.hotelRoom.roomName = "";
+      this.hotelRoom.floorArea = "";
+      this.hotelRoom.bedType = "";
+      this.hotelRoom.peopleNum = "";
+      this.hotelRoom.defaultRepertory = "";
+      this.hotelRoom.detail = "";
+      this.hotelRoom.bedSize = "";
+      this.hotelRoom.isWifi = "1";
+      this.hotelRoom.isWindow = "1";
+      this.hotelRoom.roomType = "";
+      this.bedTypeArr = [];
+      this.hotelRoomId = "";
+      this.time = "";
+      this.shuju = [];
+      this.repertoryNums = "0";
+      this.roomImgList = [];
+      this.roomImgId = [];
+      this.roomImgUrl = [];
+      // this.hotelRoom.isDiscounts = "0",
+      this.sort = null;
+      this.priceTime.startDate = "";
+      this.priceTime.endDate = "";
+      // for (let key in this.hotelRoom) {
+      //   this.hotelRoom[key] = "";
+      // }
+    },
+
+    // 房间 > 套餐
+    RoomPackage(index) {
+      this.firstStep = false;
+      this.HotelImg = false;
+      this.SecondStep = false;
+      this.thirdStep = true;
+      this.hotelRoomId = this.RoomList[index].hotelRoomId;
+      this.byValue(index);
+    },
+
+    // 返回房间
+    goBack() {
+      this.firstStep = false;
+      this.HotelImg = false;
+      this.SecondStep = true;
+      this.thirdStep = false;
+      this.hotelRoomId = "";
+    },
+
+    //酒店信息提交
+    subHotel() {
+      // this.firstStep = false;
+      // this.HotelImg = true;
+      // this.SecondStep = false;
+      // this.thirdStep = false;
+        // for (let key in this.hotelInformation) {
+        //   if (this.hotelInformation[key] == "") {
+        //     this.error("所有内容都必须填写!");
+        //     return false;
+        //   }
+        // }
+        if(this.hotelInformation.hotelName == "") {
+          this.error("请填写酒店名称!");
+          return false;
+        }
+        if(this.hotelInformation.address == "") {
+          this.error("请填写地址!");
+          return false;
+        }
+        if(this.hotelInformation.hotelPhone == "") {
+          this.error("请填写联系方式!");
+          return false;
+        }
+        if(this.hotelInformation.inTime == "") {
+          this.error("请选择入住时间!");
+          return false;
+        }if(this.hotelInformation.outTime == "") {
+          this.error("请选择离店时间  !");
+          return false;
+        }
+        if(this.longitudelatitude == "") {
+          this.error("请填写经纬度!");
+          return false;
+        }
+        if(this.hotelInformation.starLevel == "") {
+          this.error("请选择星级!");
+          return false;
+        }
+        if(this.hotelInformation.intro != "") {
+          if(this.hotelInformation.intro.length > 1000) {
+            this.error("酒店简介不超过1000字!");
+            return false;
+          }
+        }
+        this.hotelLoading = true;
+        let data = this.hotelInformation;
+        if(this.estimate == true) {
+          data.isReally = this.isReally;
+        }
+        let str = this.fruit.join(",");
+        data.item = str;
+        this.axios
+          .post(
+            `${this.AjaxUrl}/ty_business/hotel/insert`,
+            this.qs.stringify(data)
+          )
+          .then(res => {
+            if(res.errorCode == 200){
+              this.firstStep = false;
+              this.HotelImg = true;
+              this.SecondStep = false;
+              this.thirdStep = false;
+              this.hotelId = res.data;
+              this.success(res.message);
+              this.hotelLoading = false;
+            }else if(res.errorCode == 303){
+              this.hotelLoading = false;
+              this.error(res.message);
+            }else{
+              this.hotelLoading = false;
+              this.error(res.message);
+            }
+          })
+          .catch(err => {
+            this.hotelLoading = false;
+            console.log(err);
+          });
+    },
+
+    // 酒店图片 => 房间
+    subHotelImg() {
+      let data = {};
+      data.hotelId = this.hotelId;
+      data.coverImg = this.coverImg;
+      this.axios
+        .post(
+          `${this.AjaxUrl}/ty_business/hotel/update`,
+          this.qs.stringify(data)
+        )
+        .then(res => {
+          if(res.errorCode == 200){
+            this.firstStep = false;
+            this.HotelImg = false;
+            this.SecondStep = true;
+            this.thirdStep = false;
+            this.HotelRoomList();
+            this.success(res.message);
+          }else{
+            this.error(res.message);
+          }
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+
+    // 房间提交
+    subRoom() {
+      // this.RoomShow = false;
+      // this.roomInt = false;
+      // this.roomImg = true;
+      let url = "";
+      let data = this.hotelRoom;
+      console.log(this.hotelRoom);
+      data.roomType = this.bedTypeArr[0];
+      data.bedType = this.bedTypeArr[1];
+      data.bedSize = this.bedTypeArr[2];
+      data.sort = this.hotelRoom.sort;
+      console.log(typeof(data.sort));
+      let nums = /^[0-9]*$/;
+      if(this.hotelRoom.isDiscounts == "1") {
+        if(this.priceTime.startDate != "" && this.priceTime.endDate != "") {
+          data.startDate = getDate(this.priceTime.startDate);
+          data.endDate = getDate(this.priceTime.endDate);
+        }else {
+          this.error("日期不能为空!");
+          return false
+        }
+      }
+      if(nums.test(this.hotelRoom.peopleNum) == false){
+        this.error("入住人数请输入数字!");
+        return false;
+      }
+      if(nums.test(this.hotelRoom.defaultRepertory) == false){
+        this.error("库存请输入数字!");
+        return false;
+      }
+      if(this.RoomTitle == "新增房间") {
+        url = `${this.AjaxUrl}/ty_business/hotel/room/insert`;
+      }else {
+        url = `${this.AjaxUrl}/ty_business/hotel/room/update`;
+        data.hotelRoomId = this.hotelRoomId;
+      }
+      // for (let key in this.hotelRoom) {
+      //     if (this.hotelRoom[key] == "") {
+      //       this.error("所有内容都必须填写!");
+      //       return false;
+      //     }
+      //   }
+      this.roomLoading = true;
+      data.hotelId = this.hotelId;
+      this.axios
+        .post(url,this.qs.stringify(data))
+        .then(res => {
+          if(res.errorCode == 200){
+            // this.RoomShow = false;
+            if(this.RoomTitle == "新增房间") {
+                this.roomInt = false;
+                this.roomImg = true;
+                this.roomImg_2 = false;
+              this.repertoryPackage = [];
+              this.price = null;
+              this.oneDayPrice = [];
+              this.priceDate = [];
+              this.roomRepertory();
+              this.hotelRoomId = res.data;
+            } else {
+              this.RoomShow = false;
+              this.HotelRoomList();
+            }
+            this.roomLoading = false;
+            this.success(res.message);
+          }else if(res.errorCode == 303){
+            this.roomLoading = false;
+            this.error(res.message);
+          }else{
+            this.roomLoading = false;
+            this.error(res.message);
+          }
+        })
+        .catch(err => {
+          this.roomLoading = false;
+          console.log(err);
+        });
+    },
+
+    // 库存设置
+    editRepertory(hotelRoomId,defaultRepertory,index){
+      this.repertoryDisabled = true;
+      this.RoomShow = true;
+      this.roomInt = false;
+      this.roomImg = true;
+      this.roomImg_1 = false;
+      this.roomImg_2 = true;
+      this.repertory = defaultRepertory;
+      this.time = "";
+      this.shuju = [];
+      this.oneDayPrice = [];
+      this.priceDate = [];
+      this.price = null;
+      this.repertoryNums = "0";
+      this.hotelRoomId = hotelRoomId;
+      if(this.RoomList[index].isDiscounts == 1) {
+        this.priceDate.push(this.RoomList[index].startDate);
+        this.priceDate.push(this.RoomList[index].endDate);
+      }else {
+        this.priceDate = [];
+      }
+      this.roomRepertory();
+      this.repertoryPackage = [];
+      this.repertoryHotelRoomComboId = "";
+      this.kuPackageList(hotelRoomId,0);
+    },
+
+    // 房间库存
+    roomRepertory() {
+      let data = {
+          params: {
+            hotelRoomId: this.hotelRoomId
+          }
+        };
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/hotel/room/repertory/getRoomRepertory`, data)
+        .then(res => {
+          if (res.errorCode == 200) {
+            this.repertoryList = res.data;
+          }else if(res.errorCode == 303){
+            this.error(res.message);
+          }else{
+            this.error(res.message);
+          }
+        })
+        .catch(err => {});
+    },
+
+    // 编辑房间
+    editRoom(index) {
+      this.RoomTitle = "编辑房间";
+      this.RoomShow = true;
+      this.roomInt = true;
+      this.roomImg = false;
+      this.roomImg_1 = false;
+      this.roomImg_2 = false;
+      this.roomImg_3 = true;
+      let {
+        roomName,
+        floorArea,	
+        bedType,
+        peopleNum,
+        defaultRepertory,	
+        detail,
+        hotelRoomId,
+        bedSize,
+        isWifi,
+        isWindow,
+        roomType,
+        isDiscounts,
+        sort,
+        startDate,
+        endDate
+      } = this.RoomList[index];
+
+      this.hotelRoom.roomName = roomName;
+      this.hotelRoom.floorArea = floorArea;
+      this.hotelRoom.bedType = bedType;
+      this.hotelRoom.peopleNum = peopleNum;
+      this.hotelRoom.defaultRepertory = defaultRepertory;
+      this.hotelRoom.detail = detail;
+      this.hotelRoom.bedSize = bedSize;
+      this.hotelRoom.isWifi = isWifi;
+      this.hotelRoom.isWindow = isWindow;
+      this.bedTypeArr.push(roomType);
+      this.bedTypeArr.push(bedType);
+      this.bedTypeArr.push(bedSize);
+      // this.hotelRoom.roomType = roomType;
+      this.hotelRoom.isDiscounts = isDiscounts.toString();
+      this.hotelRoom.sort = sort;
+      if(this.hotelRoom.isDiscounts == "1") {
+        this.priceTime.startDate = getDate(startDate);
+        this.priceTime.endDate = getDate(endDate);
+      }
+      
+      this.hotelRoomId = hotelRoomId;
+      console.log(this.hotelRoom);
+      this.repertory = defaultRepertory;
+      let pictureList = this.RoomList[index].hotelRoomPictures;
+      this.roomImgList = [];
+      this.roomImgId = [];
+      this.roomImgUrl = [];
+      for (let i of pictureList) {
+
+        this.roomImgList.push({ url: i.pictureUrl });
+        this.roomImgId.push({ id: i.hotelRoomPictureId });
+        this.roomImgUrl.push({ url: "" });
+      }
+      console.log(pictureList);
+    },
+
+    // 删除房间
+    roomRemove(index) {
+      this.$Modal.confirm({
+        title: "警告",
+        content: "<p>确认删除该房间吗？</p>",
+        onOk: () => {
+          let url = `${this.AjaxUrl}/ty_business/hotel/room/delete`;
+          let data = {};
+          data.hotelRoomId = this.RoomList[index].hotelRoomId;
+          console.log(data);
+          this.axios
+            .post(url, this.qs.stringify(data))
+            .then(res => {
+              if(res.errorCode == 200) {
+                this.HotelRoomList();
+                this.success("操作成功！");
+              }
+            })
+            .catch(err => {});
+        },
+        onCancel: () => {
+          // this.$Message.info("Clicked cancel");
+        }
+      });
+    },
+
+    // 库存：(获取套餐列表)
+    kuPackageList(id,index) {
+      this.hotelRoomId = id;
+      console.log(this.hotelRoomId);
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/hotel/room/combo/getList`, {
+          params: {
+            hotelRoomId: this.hotelRoomId,
+          }
+        })
+        .then(res => {
+          if(res.errorCode == 200){
+            this.repertoryPackage = res.data;
+            this.repertoryHotelRoomComboId = "";
+            this.price = res.data[index].salePrice;
+            this.repertoryHotelRoomComboId = this.repertoryPackage[index].hotelRoomComboId;
+            this.getOneDayPrice(this.repertoryHotelRoomComboId);
+          }else if(res.errorCode == 303){
+            this.error(res.message);
+          }else{
+            this.error(res.message);
+          }
+        })
+        .catch(err => {
+          //this.error(err.data.msg);
+        });
+    },
+    // 获取套餐列表
+    PackageList(id,index) {
+      this.hotelRoomId = id;
+      let data = {
+          params: {
+            hotelRoomId: this.hotelRoomId
+          }
+        };
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/hotel/room/combo/getList`, data)
+        .then(res => {
+          if (res.errorCode == 200) {
+            console.log(res.data);
+            if(this.addPackageNum == 1) {
+              this.lastHotelRoomComboId = res.data[res.data.length-1].hotelRoomComboId;
+            }
+            this.ProductList = res.data;
+            this.repertoryPackage = res.date;
+            if(index == null) {
+              this.price = res.data[0].salePrice;
+              this.repertoryHotelRoomComboId = this.repertoryPackage[0].hotelRoomComboId;
+            }else{
+              this.price = res.data[index].salePrice;
+              this.repertoryHotelRoomComboId = this.repertoryPackage[index].hotelRoomComboId;
+            }
+            this.getOneDayPrice(this.repertoryHotelRoomComboId);
+
+          }else if(res.errorCode == 303){
+            this.error(res.message);
+          }else{
+            this.error(res.message);
+          }
+        })
+        .catch(err => {});
+    },
+
+    //套餐提交
+    Submitpackage(Listtype = 1, productId = "") {
+      let data = {};
+      let {
+        retailPrice,
+        salePrice,
+        settlementPrice,
+        platformCommission,
+        defaultAgentCommission,
+        defaultSaleCommission,
+        comboName,
+        refundType,
+        remark,
+        includeBreakfast
+      } = this.Package;
+      if (this.Package.comboName == "" || this.Package.comboName == null) {
+            this.isB = true;
+          }
+      if(this.Package.remark.length > 30) {
+            this.error("备注信息不超过30字");
+            return false;
+      }
+      data.hotelRoomId = this.hotelRoomId;
+      data.comboName = comboName;
+      data.refundType = refundType;
+      data.remark = remark;
+      
+      data.includeBreakfast = Number(includeBreakfast);
+
+      let num1 = accAdd(Number(settlementPrice),Number(platformCommission));
+      let num2 = accAdd(Number(defaultAgentCommission),Number(defaultSaleCommission));
+      let num3 = accAdd(num1,num2);
+       if(num3 != Number(salePrice)){
+        this.error("平台销售价 = 结算价 + 平台佣金 + 默认代理佣金 + 默认业务佣金")
+        this.isA = true;
+      }else{
+      data.retailPrice = retailPrice;
+      data.salePrice = salePrice;
+      data.settlementPrice = settlementPrice;
+      data.platformCommission = platformCommission;
+      
+      data.defaultAgentCommission = defaultAgentCommission;
+      data.defaultSaleCommission = defaultSaleCommission;
+
+      let url = "";
+      if (this.hotelRoomComboId != "" && this.hotelRoomComboId != null) {
+        url = `${this.AjaxUrl}/ty_business/hotel/room/combo/update`;
+        data.hotelRoomComboId = this.hotelRoomComboId;
+      } else {
+        url = `${this.AjaxUrl}/ty_business/hotel/room/combo/insert`;
+      }
+
+      this.axios
+        .post(url, this.qs.stringify(data))
+        .then(res => {
+          if(res.errorCode == 200){
+            
+            this.success("操作成功！");
+            // this.PackageList(this.hotelRoomId);
+            this.getHotelRoomComboId(this.hotelRoomId);
+            this.price = salePrice;
+            this.getPackagePrice();
+            this.getOneDayPrice(this.lastHotelRoomComboId);
+            // this.PackageShow = false;
+            this.setPrice = true;
+            this.setPackage = false;
+          }else if(res.errorCode == 400){
+            this.error(res.message);
+          }else if(res.errorCode == 303){
+            this.error(res.message);
+          }else{
+            this.error(res.message);
+          }
+        })
+        .catch(err => {});
+      }
+    },
+
+    // 新增获取》套餐id
+    getHotelRoomComboId(id) {
+      this.hotelRoomId = id;
+      console.log(this.hotelRoomId);
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/hotel/room/combo/getList`, {
+          params: {
+            hotelRoomId: this.hotelRoomId,
+          }
+        })
+        .then(res => {
+          if(res.errorCode == 200){
+            if(this.addPackageNum == 1) {
+              this.lastHotelRoomComboId = res.data[res.data.length-1].hotelRoomComboId;
+            }
+          }else if(res.errorCode == 303){
+            this.error(res.message);
+          }else{
+            this.error(res.message);
+          }
+        })
+        .catch(err => {
+          //this.error(err.data.msg);
+        });
+    },
+
+    //清空套餐
+    Newpackage() {
+      this.isA = false;
+      this.isB = false;
+      this.isC = false;
+      this.addPackageNum = 1;
+      this.pageagetypelist = 1;
+      this.PackageShow = true;
+      this.setPackage = true;
+      this.setPrice = false;
+      for (let key in this.Package) {
+        this.Package[key] = "";
+      }
+      this.Package.retailPrice = 0;
+      this.Package.salePrice = 0;
+      this.Package.settlementPrice = 0;
+      this.Package.platformCommission = 0;
+      this.Package.defaultAgentCommissionRatio = 0;
+      this.Package.defaultSaleCommissionRatio = 0;
+      this.Package.includeBreakfast = "0";
+      this.Package.refundType = "NO_REFUND";
+      this.Package.remark = "";
+      // this.PictureImg = require("../../assets/Home/a11.png");
+      this.hotelRoomComboId = "";
+      this.lastHotelRoomComboId = "";
+
+      this.pageageurl = `${this.AjaxUrl}/ty_business/product/package/insert`;
+      this.packageTop = "新增套餐";
+    },
+
+    //编辑获取套餐内容
+    PackageEditor(index) {
+      this.addPackageNum = 2;
+      this.PackageShow = true;
+      this.setPackage = true;
+      this.setPrice = false;
+      this.pageagetypelist = 2;
+      this.pageageurl = `${this.AjaxUrl}/ty_business/hotel/room/combo/update`;
+      this.packageTop = "编辑套餐";
+      let {
+        comboName,
+        includeBreakfast,
+        retailPrice,
+        salePrice,
+        settlementPrice,
+        platformCommission,
+        defaultAgentCommission,
+        defaultSaleCommission,
+        refundType,
+        remark,
+        hotelRoomId,
+        hotelRoomComboId
+      } = this.ProductList[index];
+
+      this.Package.comboName = comboName;
+      this.Package.includeBreakfast = includeBreakfast;
+      this.Package.retailPrice = retailPrice;
+      this.Package.salePrice = salePrice;
+      this.Package.settlementPrice = settlementPrice;
+      this.Package.platformCommission = platformCommission;
+      this.Package.defaultAgentCommission = defaultAgentCommission;
+      this.Package.defaultSaleCommission = defaultSaleCommission;
+      this.Package.refundType = refundType;
+      this.Package.remark = remark;
+      
+      this.hotelRoomId = hotelRoomId;
+      this.hotelRoomComboId = hotelRoomComboId;
+      this.lastHotelRoomComboId = hotelRoomComboId;
+    },
+    //套餐删除
+    packageremove(index) {
+      this.$Modal.confirm({
+        title: "警告",
+        content: "<p>确认删除该套餐吗？</p>",
+        onOk: () => {
+          let url = `${this.AjaxUrl}/ty_business/hotel/room/combo/delete`;
+          let data = {};
+          data.hotelRoomComboId = this.ProductList[index].hotelRoomComboId;
+          console.log(data);
+          this.axios
+            .post(url, this.qs.stringify(data))
+            .then(res => {
+              this.PackageList(this.hotelRoomId);
+              // this.CreateAproduct(3);
+              this.success("操作成功！");
+            })
+            .catch(err => {});
+        },
+        onCancel: () => {
+          // this.$Message.info("Clicked cancel");
+        }
+      });
+    },
+
+    // 提交套餐价格
+    subPackagePrice() {
+      let data = {};
+      let {
+        retailPrice,
+        salePrice,
+        settlementPrice,
+        platformCommission,
+        defaultAgentCommission,
+        defaultSaleCommission,
+      } = this.PackagePrice;
+      if(this.checkAllGroup.length <= 0) {
+        this.error("请选择星期！");
+        return false
+      }
+      let num1 = accAdd(Number(settlementPrice),Number(platformCommission));
+      let num2 = accAdd(Number(defaultAgentCommission),Number(defaultSaleCommission));
+      let num3 = accAdd(num1,num2);
+      if(num3 != Number(salePrice)){
+        this.error("平台销售价 = 结算价 + 平台佣金 + 默认代理佣金 + 默认业务佣金")
+        this.isC = true;
+        return false
+      }
+      this.weekspriceLoading = true;
+      let weeks = this.checkAllGroup.join(",");
+      // data = this.PackagePrice;
+      data.weeks = weeks;
+      data.hotelRoomComboId = this.lastHotelRoomComboId;
+      data.retailPrice = retailPrice;
+      data.salePrice = salePrice;
+      data.settlementPrice = settlementPrice;
+      data.platformCommission = platformCommission;
+      data.defaultAgentCommission = defaultAgentCommission;
+      data.defaultSaleCommission = defaultSaleCommission;
+      this.axios
+        .post(`${this.AjaxUrl}/ty_business/hotel/room/combo/versions/weekPriceSetting`, this.qs.stringify(data))
+        .then(res => {
+          if(res.errorCode == 200){
+            this.success("操作成功！");
+            this.getPackagePrice();
+            this.deletePackagePrice();
+            this.weekspriceLoading = false;
+          }else if(res.errorCode == 400){
+            this.error("所有内容都必须填写!");
+            this.weekspriceLoading = false;
+          }else{
+            this.error(res.message);
+            this.weekspriceLoading = false;
+          }
+        })
+        .catch(err => {this.weekspriceLoading = false;});
+    },
+    // 获取套餐价格
+    getPackagePrice() {
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/hotel/room/combo/versions/getPriceSetting`, {
+          params: {
+            hotelRoomComboId: this.lastHotelRoomComboId,
+            type: "1"
+          }
+        })
+        .then(res => {
+          if (res.errorCode == 200) {
+            for(let i = 0; i<this.weeksList.length; i++){
+              this.weeksList[i].priceColor = false;
+              this.weeksList[i].retailPrice = this.Package.retailPrice;
+              this.weeksList[i].salePrice = this.Package.salePrice;
+              this.weeksList[i].settlementPrice = this.Package.settlementPrice;
+              this.weeksList[i].platformCommission = this.Package.platformCommission;
+              this.weeksList[i].defaultAgentCommission = this.Package.defaultAgentCommission;
+              this.weeksList[i].defaultSaleCommission = this.Package.defaultSaleCommission;
+
+                for(let j = 0; j<res.data.length; j++){
+                  console.log(this.weeksList[i].num);
+                  // console.loog(res.data[j].week)
+                  if(this.weeksList[i].num == res.data[j].week){
+                    this.weeksList[i].priceColor = true;
+                    this.weeksList[i].retailPrice = res.data[j].retailPrice;
+                    this.weeksList[i].salePrice = res.data[j].salePrice;
+                    this.weeksList[i].settlementPrice = res.data[j].settlementPrice;
+                    this.weeksList[i].platformCommission = res.data[j].platformCommission;
+                    this.weeksList[i].defaultAgentCommission = res.data[j].defaultAgentCommission;
+                    this.weeksList[i].defaultSaleCommission = res.data[j].defaultSaleCommission;
+                  }
+                }
+            }
+            console.log(res.data);
+          }
+        });
+    },
+    // 日历数据
+    byValue(index) {
+      this.repertory = this.RoomList[index].defaultRepertory;
+      console.log(this.repertory);
+      this.priceDate = [];
+      if(this.RoomList[index].isDiscounts == 1) {
+        this.priceDate.push(this.RoomList[index].startDate);
+        this.priceDate.push(this.RoomList[index].endDate);
+      }else {
+        this.priceDate = [];
+      }
+    },
+
+    // 单日价格设定
+    subOneDayPrice() {
+      let data = {};
+      let {
+        retailPrice,
+        salePrice,
+        settlementPrice,
+        platformCommission,
+        defaultAgentCommission,
+        defaultSaleCommission,
+      } = this.PackagePrice;
+      if(this.time == "") {
+        this.error("请选择日期！");
+        return false
+      }
+      let num1 = accAdd(Number(settlementPrice),Number(platformCommission));
+      let num2 = accAdd(Number(defaultAgentCommission),Number(defaultSaleCommission));
+      let num3 = accAdd(num1,num2);
+      if(num3 != Number(salePrice)){
+        this.error("平台销售价 = 结算价 + 平台佣金 + 默认代理佣金 + 默认业务佣金")
+        this.isC = true;
+        return false
+      }
+      this.daypriceLoading = true;
+      // data = this.PackagePrice;
+      data.settingDate = this.time;
+      data.hotelRoomComboId = this.lastHotelRoomComboId;
+      data.retailPrice = retailPrice;
+      data.salePrice = salePrice;
+      data.settlementPrice = settlementPrice;
+      data.platformCommission = platformCommission;
+      data.defaultAgentCommission = defaultAgentCommission;
+      data.defaultSaleCommission = defaultSaleCommission;
+      this.axios  
+        .post(`${this.AjaxUrl}/ty_business/hotel/room/combo/versions/datePriceSetting`, this.qs.stringify(data))
+        .then(res => {
+          if(res.errorCode == 200){
+            this.success("操作成功！");
+            this.getOneDayPrice(this.lastHotelRoomComboId);
+            this.deletePackagePrice();
+            this.daypriceLoading = false;
+          }else if(res.errorCode == 400){
+            this.error(res.message);
+            this.daypriceLoading = false;
+          }else{
+            this.error(res.message);
+            this.daypriceLoading = false;
+          }
+        })
+        .catch(err => {this.daypriceLoading = false;});
+    },
+    // 获取单日定制价格
+    getOneDayPrice(id) {
+      let hotelRoomComboId = id;
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/hotel/room/combo/versions/getPriceSetting`, {
+          params: {
+            hotelRoomComboId: hotelRoomComboId,
+            type: "2"
+          }
+        })
+        .then(res => {
+          if (res.errorCode == 200) {
+            console.log(res.data);
+            this.oneDayPrice = res.data;
+            console.log(this.oneDayPrice);
+          }
+        });
+    },
+    // 清空套餐价格
+    deletePackagePrice() {
+      for (let key in this.PackagePrice) {
+        this.PackagePrice[key] = 0;
+      }
+      for (let i in this.weeksList) {
+        this.weeksList[i].priceColor = false;
+      }
+      this.checkAllGroup = [];
+    },
+    handleCheckAll () {
+        if (this.indeterminate) {
+            this.checkAll = false;
+        } else {
+            this.checkAll = !this.checkAll;
+        }
+        this.indeterminate = false;
+        if (this.checkAll) {
+            this.checkAllGroup = ["星期一","星期二","星期三","星期四","星期五","星期六","星期日",];
+        } else {
+            this.checkAllGroup = [];
+        }
+    },
+    checkAllGroupChange (data) {
+        if (data.length === 7) {
+            this.indeterminate = false;
+            this.checkAll = true;
+        } else if (data.length > 0) {
+            this.indeterminate = true;
+            this.checkAll = false;
+        } else {
+            this.indeterminate = false;
+            this.checkAll = false;
+        }
+    },
+
+    //经纬度
+    SubPositioning() {
+      this.longitudelatitude =
+        this.hotelInformation.longitude +
+        "," +
+        this.hotelInformation.latitude;
+      this.mapShow = false;
+    },
+    ClosetheMap() {
+      this.mapShow = false;
+    },
+    shutdown() {
+      this.mapShow = false;
+    },
+
+    //地图
+    Positioning() {
+      this.mapShow = true;
+      let _this = this;
+      
+      let marker;
+      map.on("click", function(e) {
+        if (marker) {
+          marker.setMap(null);
+          marker = null;
+        }
+        console.log('您在[ ' + e.lnglat.getLng() + ',' + e.lnglat.getLat() + ' ]的位置点击了地图！');
+        marker = new AMap.Marker({
+          map: map, 
+          icon: "http://webapi.amap.com/theme/v1.3/markers/n/mark_b.png",
+          position: [e.lnglat.getLng(), e.lnglat.getLat()]
+        });
+        marker.setMap(map);
+        if(e.lnglat.getLng() != "" || e.lnglat.getLng() != null){
+          _this.hotelInformation.longitude = e.lnglat.getLng();
+          _this.hotelInformation.latitude = e.lnglat.getLat();
+        }
+      });
+    },
+    Stopclosing() {},
+
+    clicktable() {},
+    //获取城市位置
+    Provincialchange() {
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/area/byPid`, {})
+        .then(res => {
+          let data = res.data;
+          for (let i of data) {
+            this.province.push({ label: i.areaName, name: i.areaId });
+          }
+          this.hotelInformation.provinceId = data[0].areaId;
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+    //城市联级选择
+    Citychanges() {
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/area/byPid`, {
+          params: {
+            pid: this.hotelInformation.provinceId
+          }
+        })
+        .then(res => {
+          let data = res.data;
+          this.cityList = [];
+          for (let i of data) {
+            this.cityList.push({ label: i.areaName, name: i.areaId });
+          }
+          this.hotelInformation.cityId = data[0].areaId;
+        })
+        .catch(err => {});
+    },
+    Townchange() {
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/area/byPid`, {
+          params: {
+            pid: this.hotelInformation.cityId
+          }
+        })
+        .then(res => {
+          let data = res.data;
+          this.categoryList = [];
+          for (let i of data) {
+            this.categoryList.push({ label: i.areaName, name: i.areaId });
+          }
+          this.hotelInformation.areaId = data[0].areaId;
+        })
+        .catch(err => {});
+    },
+    
+    error(text) {
+      this.$Message.error(text);
+    },
+    success(text) {
+      this.$Message.success(text);
+    },
+
+    //获取地图
+    maps() {
+      let _this = this;
+      map = new AMap.Map("container", {
+        resizeEnable: true,
+        zoom: 11,
+      });
+      //地图中添加地图操作ToolBar插件
+      map.plugin(["AMap.ToolBar",'AMap.Autocomplete','AMap.PlaceSearch'], function(e) {
+        //设置地位标记为自定义标记
+        var toolBar = new AMap.ToolBar();
+        map.addControl(toolBar);
+        var autoOptions = {
+            // city:'',//城市，默认全国
+            input: "keyword"//使用联想输入的input的id
+        };
+        var autocomplete = new AMap.Autocomplete(autoOptions);
+        var placeSearch = new AMap.PlaceSearch({
+            // city:'',
+            map:map
+        });
+        AMap.event.addListener(autocomplete, "select", function(e){
+        //
+        placeSearch.setCity(e.poi.adcode);
+        placeSearch.search(e.poi.name);
+        console.log(e.poi)
+         let gps=[];
+         gps.push(e.poi.location.lng)
+         gps.push(e.poi.location.lat)
+         _this.Gps=gps;
+         _this.hotelInformation.longitude = e.poi.location.lng;
+         _this.hotelInformation.latitude = e.poi.location.lat;
+        });
+      });
+    },
+    // 富文本
+    editor() {
+      var editors = new E(this.$refs.editor);
+      // editors.customConfig.uploadImgShowBase64 = true;
+      editors.customConfig.colors = [
+          '#000000',
+          '#eeece0',
+          '#1c487f',
+          '#4d80bf',
+          '#c24f4a',
+          '#8baa4a',
+          '#7b5ba1',
+          '#46acc8',
+          '#f9963b',
+          '#ffffff',
+          '#0000C6',
+          '#FF0000',
+          '#00FF00',
+          '#0000FF',
+          '#FFFF00',
+          '#00FFFF',
+          '#FF00FF',
+          '#C0C0C0'
+      ];
+      var config = getCookie('token');
+      var ImgUrl = this.ImgUrl;
+      editors.customConfig.uploadImgServer = `${this.AjaxUrl}/ty_business/upload`;
+      var data = new FormData();
+      editors.customConfig.uploadImgParams = {
+          file: "file"
+      }
+      editors.customConfig.uploadFileName = 'file';
+      // editors.customConfig.uploadImgMaxSize = 10 * 1024 * 1024;
+        editors.customConfig.uploadImgHeaders = {
+            // 'Accept' : 'multipart/form-data',
+            'token' : config
+        };
+        editors.customConfig.uploadImgHooks = {
+            before: function (xhr, editor, files) {
+                this.editorImg = files[0].name.split(".")
+            },
+            error: function (xhr, editor) {
+                alert("2:"+xhr);
+                // 图片上传出错时触发
+                // xhr 是 XMLHttpRequst 对象，editor 是编辑器对象
+            },
+            fail: function (xhr, editor, result) {
+                alert("1:"+xhr);
+            },
+            success:function(xhr, editor, result){
+                console.log(result)
+                // insertImg(result.data);
+            },
+            customInsert: function (insertImg, result, editor) {
+                // 图片上传并返回结果，自定义插入图片的事件（而不是编辑器自动插入图片！！！）
+                // insertImg 是插入图片的函数，editor 是编辑器对象，result 是服务器端返回的结果
+                console.log(result.data);
+                let ext = this.editorImg;
+                if(ext[1] == "png"){
+                  insertImg(ImgUrl+result.data+'.png');
+                }else if(ext[1] == "jpg"){
+                  insertImg(ImgUrl+result.data+'.jpg');
+                }
+            }
+        };
+      editors.customConfig.onchange = html => {
+        this.editorContent = html;
+      };
+      editors.create();
+    },
+    // 酒店选项数据
+    hotelCheckBox() {
+      this.axios
+      .get(`${this.AjaxUrl}/ty_business/hotel/item/get`, )
+      .then(res => {
+        if (res.errorCode == 200) {
+          this.checkBox = res.data;
+          console.log(this.checkBox);
+        }else if(res.errorCode == 303){
+          this.error(res.message);
+        }else{
+          this.error(res.message);
+        }
+      })
+      .catch(err => {});
+    },
+    // businessUserId
+    getUserInfo() {
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/business/user/getUserInfo`, )
+        .then(res => {
+          if (res.errorCode == 200) {
+            this.businessUserId = res.data.businessUserId;
+            this.parentId = res.data.parentId;
+            console.log(this.businessUserId);
+            if(this.parentId == 0 && this.businessUserId == 46) {
+              this.estimate = true;
+            }else if(this.parentId == 46) {
+              this.estimate = true;
+            }
+          }else{
+            this.error(res.message)
+          }
+        })
+        .catch(err => {});
+    },
+  },
+  //监听
+  watch: {
+    "hotelInformation.provinceId": {
+      handler: function(val, oldVal) {
+        this.Citychanges();
+      },
+      deep: true
+    },
+    "hotelInformation.cityId": {
+      handler: function(val, oldVal) {
+        this.Townchange();
+      },
+      deep: true
+    }
+  },
+  created() {
+    this.Provincialchange();
+  },
+  mounted() {
+    this.auth_id = this.$route.params.id;
+      //初始化加载
+    this.getUserInfo();
+    this.hotelCheckBox();
+    this.maps();
+    this.axios
+      .get(`${this.AjaxUrl}/ty_business/hotel/getList`, )
+      .then(res => {
+        if (res.errorCode == 200) {
+          console.log(res.data.list);
+        }else if(res.errorCode == 303){
+          this.error(res.message);
+        }else{
+          this.error(res.message);
+        }
+      })
+      .catch(err => {});
+  }
+};
+</script>
+
+<style  lang="scss" scoped>
+.amap-marker{
+  z-index: 120 !important;
+}
+.w-e-menu{
+  z-index: 2 !important;
+}
+.w-e-text-container{
+  z-index: 2 !important;
+}
+.w-e-text img{
+    width: 250px !important;
+    height: 180px !important;   		
+}
+//多选框
+.checkbox{
+  background: #ffffff;
+  padding-top: 5px;
+}
+.ivu-checkbox-group{
+  padding: 5px 0;
+}
+.checkTitle{
+  display: inline-block;
+  width: 72px;
+  margin-left: 5px;
+}
+
+#keyword{
+  width: 30%;
+  position: absolute;
+  top: 20px;
+  right: 0;
+  z-index: 120;
+  line-height: 30px;
+  font-size: 15px;
+  margin-right: 10px;
+  padding-left: 5px;
+  border-radius: 4px;
+}
+#maps {
+  width: 800px;
+  height: 600px;
+  position: absolute;
+  left: 50%;
+  top: 10%;
+  // margin-top: -150px;
+  margin-left: -400px;
+  background: #ffffff;
+  z-index: 999;
+  border-radius: 12px;
+  border: 2px solid #eee;
+  .maptitle {
+    height: 40px;
+    font-size: 20px;
+    line-height: 40px;
+    text-indent: 20px;
+    background: #eee;
+    div {
+      float: right;
+      height: 100%;
+      width: 100px;
+      cursor: pointer;
+    }
+  }
+  #container {
+    height: 520px;
+    top: 40px;
+  }
+  .Btn {
+    width: 100%;
+    text-align: center;
+    margin-top: 524px;
+    height: 30px;
+  }
+}
+.Title {
+  height: 40px;
+  line-height: 40px;
+  color: #929292;
+  background: #f7f7f7;
+  text-indent: 16px;
+  font-size: 16px;
+  border-bottom: 1px solid #52c0c7;
+
+  span {
+    margin-left: 4px;
+  }
+}
+.Package {
+  position: absolute;
+  height: 600px;
+  overflow: auto;
+  width: 75%;
+  background: #fff;
+  border: 4px solid #eee;
+  z-index: 888;
+  border-radius: 12px;
+  top: 10%;
+  left: 50%;
+  margin-left: -35%;
+  label{
+    width: 72px;
+  }
+  .packageTop {
+    font-size: 16px;
+    text-indent: 24px;
+    height: 30px;
+    line-height: 30px;
+    border-bottom: 1px solid #eee;
+  }
+}
+.SetMeal {
+  // min-height: 600px;
+  padding: 0 10px;
+  overflow: auto;
+}
+.InputList {
+  display: flex;
+  background: #ffffff;
+  justify-content: space-between;
+  // align-items: center;
+  > div {
+    flex: 1;
+    margin: 4px 0;
+    label {
+      display: inline-block;
+      width: 72px;
+      text-align: left;
+      margin-left: 5px;
+    }
+  }
+}
+
+.demo-upload-list {
+  display: inline-block;
+  width: 100px;
+  height: 100px;
+  text-align: center;
+  line-height: 100px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fff;
+  position: relative;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  margin-right: 4px;
+}
+.demo-upload-list img {
+  width: 100%;
+  height: 100%;
+}
+.demo-upload-list-cover {
+  display: none;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+.demo-upload-list:hover .demo-upload-list-cover {
+  display: block;
+}
+.demo-upload-list-cover i {
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  margin: 0 10px;
+}
+
+.imglist {
+  position: relative;
+  display: inline-block;
+  width: 100px;
+}
+
+.san_top {
+  margin: 0 10px;
+  text-indent: 10px;
+  border-bottom: 1px solid #ccc;
+  font-size: 16px;
+  height: 40px;
+  line-height: 40px;
+  margin-bottom: 10px;
+}
+.demo-tabs-style1 > .ivu-tabs-card > .ivu-tabs-content {
+    height: 120px;
+    margin-top: -16px;
+}
+
+.demo-tabs-style1 > .ivu-tabs-card > .ivu-tabs-content > .ivu-tabs-tabpane {
+    background: #fff;
+    padding: 16px;
+}
+
+.demo-tabs-style1 > .ivu-tabs.ivu-tabs-card > .ivu-tabs-bar .ivu-tabs-tab {
+    border-color: transparent;
+}
+
+.demo-tabs-style1 > .ivu-tabs-card > .ivu-tabs-bar .ivu-tabs-tab-active {
+    border-color: #fff;
+}
+.packageList {
+  width: 50%;
+  margin: 10px 0;
+}
+</style>

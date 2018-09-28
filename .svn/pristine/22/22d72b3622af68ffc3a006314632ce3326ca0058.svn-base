@@ -1,0 +1,748 @@
+<template lang="pug">
+  <div class="packageAdd"> 
+    <div class="packageAdd_title"> 编辑酒店
+       <button @click="closeShow"> <Icon type="close" ></Icon> </button>
+    </div>
+
+    <div> </div>
+    <div style="width:100%;height: 650px;overflow: auto;"> 
+      <div class="InputList" style="margin-top:20px;">
+        <div>
+            <label for="">酒店名称</label>
+            <Input style="width: 70%" v-model="hotelInformation.hotelName"></Input>
+        </div>
+        <div>
+            <label for="">地址</label>
+            <Input style="width: 70%" v-model="hotelInformation.address"></Input>
+        </div>
+      </div>         
+      <div class="InputList">
+        <div>
+            <label for="">支付类型</label>
+            <Select v-model="hotelInformation.payType"  style="width: 70%">
+                <Option  key="0" value="ALL">全部</Option>
+            </Select>
+        </div>
+        <div>
+            <label for="">联系方式</label>
+            <Input v-model="hotelInformation.hotelPhone"   style="width: 70%"></Input>
+        </div>
+      </div>
+      <div class="InputList">
+        <div>
+            <label for="">经纬度</label>
+            <Input v-model="longitudelatitude"  @on-focus="Positioning"  style="width: 70%"></Input>
+        </div>
+        <div>
+            <label for="">地区</label>
+            <Select style="width: 23.333%"  v-model="hotelInformation.provinceId">
+                <Option v-for="item in province"  :key="item.name" :value="item.name">{{item.label }} </Option>
+            </Select>
+            <Select style="width: 23.333%" v-model="hotelInformation.cityId">
+                <Option v-for="item in cityList"  :key="item.name" :value="item.name">{{item.label }} </Option>
+            </Select>
+            <Select style="width: 23.333%" v-model="hotelInformation.areaId">
+                <Option v-for="item in categoryList"  :key="item.name" :value="item.name">{{item.label }} </Option>
+            </Select>
+        </div>
+      </div> 
+      <div class="InputList">
+        <div>
+            <label for="">简介</label>
+            <Input style="width: 70%" type="textarea" :rows="4" v-model="hotelInformation.intro"></Input>
+        </div>
+        <div> </div>
+      </div> 
+        
+      <div style="margin-top:20px;background:#fff"> 
+          <div v-for="(list,index) of imglist1" class="imglist1 demo-upload-list"> 
+            <img :src="smallImg1(index)" style="width:100px">
+            <div class="demo-upload-list-cover"> 
+                <Icon type="ios-eye-outline" @click.native="handleView1(index)"></Icon>
+                <Icon type="ios-trash-outline" @click.native="handleRemove1(index)"></Icon>
+            </div>
+          </div>
+          
+          //- <div v-for="(list,index) of imglist" class="imglist demo-upload-list"> 
+          //-   <img :src="smallImg(index)" style="width:100px">
+          //-   <div class="demo-upload-list-cover"> 
+          //-       <Icon type="ios-eye-outline" @click.native="handleView(index)"></Icon>
+          //-       <Icon type="ios-trash-outline" @click.native="handleRemove(index)"></Icon>
+          //-   </div>
+          //- </div>
+          <Upload multiple style="display:inline-block" :before-upload="handleUpload" :show-upload-list="false" action="//jsonplaceholder.typicode.com/posts/">
+            <img src="../../assets/Home/a11.png" style="width:100px;">
+          </Upload>
+         
+      </div>
+      div(style="height:35px;")           
+        h3(style="font-weight: bold;float:left;padding-top:8px;") &nbsp; 特色介绍   
+        Button(type="success" @click="preview" style="float:right;margin-right:10px;")  预览内容    
+      div(style="margin-top:10px;background:#fff" )
+          div(ref="editors" ) 
+      <div class="Btn">
+         <Button type="success"  long @click="Changeproduct" :loading="loading" style="margin-top:15px;margin-bottom:10px;">更改</Button>
+      </div>       
+    </div>
+    <Modal title="查看大图" v-model="visible">
+        <div style="text-align:center;">
+            <img :src="amplification" style="width:100%;">
+        </div>
+    </Modal>
+    
+    <Modal title="详情" v-model="productInfoShow" width="740px">
+        <p ref="edit"></p>
+    </Modal>
+    <transition  enter-active-class="animated zoomInLeft" leave-active-class="animated zoomOutRight">
+        <div id="maps" v-show="mapShow"  @click.stop="Stopclosing">
+            <div class="maptitle">地图
+                <div @click="ClosetheMap">
+                <Icon type="close-circled"></Icon>
+                </div>
+            </div>
+            <div id="container">
+                <div>
+                <label for="">地图</label>
+                <input type="text" id="keyword" placeholder="请输入地址"></input>
+                </div>
+            </div>
+            <div class="Btn">
+                <Button type="success" @click="SubPositioning"  long> 提交</Button>
+            </div>
+        </div>
+    </transition>
+    //- transition(enter-active-class="animated zoomInLeft" leave-active-class="animated zoomOutRight")    
+    //-     div(id="maps" v-show="mapShow"  @click.stop="Stopclosing")
+    //-         .maptitle 地图
+    //-             div(@click="ClosetheMap")
+    //-                 Icon(type="close-circled")
+    //-         #container
+    //-          div 
+    //-           label 地图
+    //-           <input type="text" id="keyword" placeholder="请输入地址">
+    //-         .Btn
+    //-             Button(type="success" @click="SubPositioning"  long) 提交     
+  </div>    
+</template>
+<script>
+import E from "wangeditor";
+export default {
+  props: {
+    hotelId: Number
+  },
+  data() {
+    return {
+      loading: false,
+      productInfoShow: false,
+      uploadList: [],
+      imgurl:[],
+      editorImg: null,
+      editorContent: "",
+      auth_id: "",
+      amplification: "",
+      visible: false,
+      imglist: [],
+      imglist1: [],
+      mapShow: false,
+      province: [],
+      cityList: [],
+      ZYBtype: false,
+      categoryList: [],
+      productTagList: [],
+      Selectmenu: [],
+      longitudelatitude: "",
+      productInformation: {
+        detail: "",
+        productName: "",
+        address: "",
+        longitude: "",
+        latitude: "",
+        provinceId: "",
+        cityId: "",
+        areaId: "",
+        productCategoryId: "",
+        productTagId: [],
+        apiConfig: "TONGYOU",
+        productTitle: ""
+      },
+      hotelInformation: {
+        hotelName: "",
+        hotelPhone: "",
+        longitude: "",
+        latitude: "",
+        provinceId: "",
+        cityId: "",
+        areaId: "",
+        address: "",
+        payType: "",
+        intro: "",
+      },
+      productPictureList: [],
+      imglistId: [],
+    };
+  },
+  watch: {
+    //获取酒店详情
+    hotelId: function(val) {
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/hotel/getDetail`, {
+          params: {
+            hotelId: this.hotelId
+          }
+        })
+        .then(res => {
+          let {
+            hotelName,
+            hotelPhone,
+            payType,
+            hotelId,
+            longitude,
+            latitude,
+            provinceId,
+            cityId,
+            areaId,
+            address,
+            detail,
+            intro
+          } = res.data;
+          this.hotelInformation.provinceId = provinceId;
+          this.hotelInformation.cityId = cityId;
+          this.hotelInformation.areaId = areaId;
+          this.hotelInformation.intro = intro;
+          this.hotelInformation.hotelPhone = hotelPhone;
+          this.hotelInformation.payType = payType;
+
+          this.hotelInformation.hotelName = hotelName;
+          this.hotelInformation.address = address;
+          this.hotelInformation.longitude = longitude;
+          this.hotelInformation.latitude = latitude;
+          this.longitudelatitude = longitude + "," + latitude;
+
+          let productPictureList = res.data.hotelPictureList;
+          this.imglist1 = [];
+          this.imglistId = [];
+          this.imgurl = [];
+          for (let i of productPictureList) {
+            this.imglist1.push({ url: i.pictureUrl });
+            this.imglistId.push({ id: i.hotelPictureId });
+            this.imgurl.push({ url: "" });
+            // this.uploadList.push("a");
+          }
+          var editors = new E(this.$refs.editors);
+          editors.customConfig.zIndex = 100;
+          // editors.customConfig.uploadImgShowBase64 = true;
+          editors.customConfig.colors = [
+          '#000000',
+          '#eeece0',
+          '#1c487f',
+          '#4d80bf',
+          '#c24f4a',
+          '#8baa4a',
+          '#7b5ba1',
+          '#46acc8',
+          '#f9963b',
+          '#ffffff',
+          '#0000C6',
+          '#FF0000',
+          '#00FF00',
+          '#0000FF',
+          '#FFFF00',
+          '#00FFFF',
+          '#FF00FF',
+          '#C0C0C0'
+        ];
+    var config = getCookie('token');
+    var ImgUrl = this.ImgUrl;
+    editors.customConfig.uploadImgServer = `${this.AjaxUrl}/ty_business/upload`;
+    var data = new FormData();
+    editors.customConfig.uploadImgParams = {
+        file: "file"
+    }
+    editors.customConfig.uploadFileName = 'file';
+    // editors.customConfig.uploadImgMaxSize = 10 * 1024 * 1024;
+      editors.customConfig.uploadImgHeaders = {
+          // 'Accept' : 'multipart/form-data',
+          'token' : config
+      };
+      editors.customConfig.uploadImgHooks = {
+          before: function (xhr, editor, files) {
+              this.editorImg = files[0].name.split(".")
+          },
+          error: function (xhr, editor) {
+              alert("2:"+"图片上传出错");
+              // 图片上传出错时触发
+              // xhr 是 XMLHttpRequst 对象，editor 是编辑器对象
+          },
+          fail: function (xhr, editor, result) {
+              alert("1:"+xhr);
+          },
+          success:function(xhr, editor, result){
+              console.log(result)
+              // alert(result.data);
+              // insertImg(result.data);
+          },
+          customInsert: function (insertImg, result, editor) {
+              // 图片上传并返回结果，自定义插入图片的事件（而不是编辑器自动插入图片！！！）
+              // insertImg 是插入图片的函数，editor 是编辑器对象，result 是服务器端返回的结果
+              // 举例：假如上传图片成功后，服务器端返回的是 {url:'....'} 这种格式，即可这样插入图片：
+              // alert(result.data+"123");
+              console.log(result.data);
+              let ext = this.editorImg;
+              if(ext[1] == "png"){
+                insertImg(ImgUrl+result.data+'.png');
+              }else if(ext[1] == "jpg"){
+                // setTimeout(() => {
+                  insertImg(ImgUrl+result.data+'.jpg');
+                // }, 2000);
+              }
+          }
+      };
+          editors.customConfig.onchange = html => {
+            this.productInformation.detail = html;
+          };
+          editors.create();
+          editors.txt.html("");
+          // editors.txt.html(detail);
+        })
+        .catch(err => {});
+    },
+    "hotelInformation.provinceId": {
+      handler: function(val, oldVal) {
+        this.Citychanges();
+      },
+      deep: true
+    },
+    "hotelInformation.cityId": {
+      handler: function(val, oldVal) {
+        this.Townchange();
+      },
+      deep: true
+    }
+  },
+  methods: {
+    //预览
+    preview() {
+      this.productInfoShow = true;
+      this.$refs.edit.innerHTML = this.productInformation.detail;
+      console.log(this.productInformation.detail);
+    },
+    //编辑产品提交
+    Changeproduct() {
+      let data = this.hotelInformation;
+      data.hotelId = this.hotelId;
+      data.auth_id = this.auth_id;
+      this.loading = true;
+      this.axios
+        .post(
+          `${this.AjaxUrl}/ty_business/hotel/update`,
+          this.qs.stringify(data)
+        )
+        .then(res => {
+          if(res.errorCode == 200){
+            this.loading = false;
+            this.$emit("closes", true);
+            this.$emit("closechang", true);
+            console.log(res);
+            this.success(res.message);
+          }else{
+            this.loading = false;
+            this.error(res.message);
+          }
+        })
+        .catch(err => {
+          this.loading = false;
+          this.error(err);
+          console.log(err);
+        });
+    },
+    // 酒店
+    hotel() {
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/hotel/getDetail`, {
+          params: {
+            hotelId: this.hotelId
+          }
+        })
+        .then(res => {
+          if(res.errorCode == 200) {
+            let productPictureList = res.data.hotelPictureList;
+            this.imglist1 = [];
+            this.imglistId = [];
+            for (let i of productPictureList) {
+              this.imglist1.push({ url: i.pictureUrl });
+              this.imglistId.push({ id: i.hotelPictureId });
+            }
+            console.log(this.imglist1);
+          }
+        })
+        .catch(err => {});
+    },
+
+    // 上传图片
+    handleUpload(file) {
+    
+      console.log(this.uploadList)
+      var reader = new FileReader();
+      var _this = this;
+      let data = new FormData();
+      data.append("sort", this.imglist1.length);
+      data.append("hotelId", this.hotelId);
+      data.append("hotelPicture", file);
+      this.axios
+        .post(`${this.AjaxUrl}/ty_business/hotel/picture/upload`, data)
+        .then(res => {
+          if (res.errorCode == 200) {
+            this.imglist1.push({ url: res.data });
+            reader.readAsDataURL(file);
+            reader.onload = function(e) {
+              _this.imgurl.push({ url: this.result });
+            };
+            this.hotel();
+          }else{
+            this.error("图片上传错误")
+          }
+          console.log(res.errorCode);
+        })
+        .catch(err => {});
+    },
+
+    //图片放大
+    handleView(index) {
+      this.visible = true;
+      this.amplification = this.imgurl[index];
+    },
+    handleView1(index) {
+      this.visible = true;
+      if(this.imgurl[index].url != "") {
+        this.amplification = this.imgurl[index].url;
+      }else {
+        this.amplification = this.ImgUrl + this.imglist1[index].url + "_small.jpg";
+      }
+    },
+
+    //图片删除
+    handleRemove(index) {
+      let data = {};
+      data.hotelPictureId = this.imglistId[index].id;
+      this.axios
+        .post(
+          `${this.AjaxUrl}/ty_business/hotel/picture/delete`,
+          this.qs.stringify(data)
+        )
+        .then(res => {
+          if (res.errorCode == 200) {
+            console.log(res.message);
+              this.imglist.splice(index,1);
+              this.imgurl.splice(index,1);
+              this.uploadList.pop("a");
+          }else{
+            this.error(res.message);
+          }
+          return this.uploadList
+        })
+        .catch(err => {});
+    },
+    handleRemove1(index) {
+      let data = {};
+      // data.productId = this.productId;
+      data.hotelPictureId = this.imglistId[index].id;
+      this.axios
+        .post(
+          `${this.AjaxUrl}/ty_business/product/picture/delete`,
+          this.qs.stringify(data)
+        )
+        .then(res => {
+          if (res.errorCode == 200) {
+            console.log(res.message);
+              this.imglist1.splice(index,1);
+              this.imgurl.splice(index,1);
+              // this.uploadList.pop("a");
+          }else{
+            this.error(res.message);
+          }
+          return this.uploadList , this.imglist1
+        })
+        .catch(err => {});
+    },
+
+    smallImg(index) {
+      return this.imgurl[index];
+    },
+    smallImg1(index) {
+      console.log( this.imgurl[index].url);
+      if(this.imgurl[index].url != "") {
+        return this.imgurl[index].url;
+      }else {
+        return this.ImgUrl + this.imglist1[index].url + "_small.jpg";
+      }
+    },
+    
+    ClosetheMap() {
+      this.mapShow = false;
+    },
+    SubPositioning() {
+      this.longitudelatitude =
+        this.hotelInformation.longitude +
+        "," +
+        this.hotelInformation.latitude;
+      this.mapShow = false;
+    },
+    CreateAproduct() {},
+    Stopclosing() {},
+    
+    //地图地址提交
+    Positioning() {
+      this.mapShow = true;
+
+      let marker;
+      map.on("click", function(e) {
+        if (marker) {
+          marker.setMap(null);
+          marker = null;
+        }
+        marker = new AMap.Marker({
+          icon: "http://webapi.amap.com/theme/v1.3/markers/n/mark_b.png",
+          position: [e.lnglat.getLng(), e.lnglat.getLat()]
+        });
+        marker.setMap(map);
+        _this.hotelInformation.longitude = e.lnglat.getLng();
+        _this.hotelInformation.latitude = e.lnglat.getLat();
+      });
+    },
+    Provincialchange() {
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/area/byPid`, {})
+        .then(res => {
+          let data = res.data;
+          for (let i of data) {
+            this.province.push({ label: i.areaName, name: i.areaId });
+          }
+          this.hotelInformation.provinceId = data[0].areaId;
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+    Citychanges() {
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/area/byPid`, {
+          params: {
+            pid: this.hotelInformation.provinceId
+          }
+        })
+        .then(res => {
+          let data = res.data;
+          this.cityList = [];
+          for (let i of data) {
+            this.cityList.push({ label: i.areaName, name: i.areaId });
+          }
+          this.hotelInformation.cityId = data[0].areaId;
+        })
+        .catch(err => {});
+    },
+    Townchange() {
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/area/byPid`, {
+          params: {
+            pid: this.hotelInformation.cityId
+          }
+        })
+        .then(res => {
+          let data = res.data;
+          this.categoryList = [];
+          for (let i of data) {
+            this.categoryList.push({ label: i.areaName, name: i.areaId });
+          }
+          // this.productInformation.areaId = data[0].areaId;
+        })
+        .catch(err => {});
+    },
+    closeShow() {
+      this.$emit("closechang", true);
+    },
+    error(text) {
+      this.$Message.error(text);
+    },
+    success(text) {
+      this.$Message.success(text);
+    },
+
+    //地图
+    maps() {
+       let _this = this;
+      map = new AMap.Map("container", {
+        resizeEnable: true,
+        zoom: 11
+      });
+      //地图中添加地图操作ToolBar插件
+      map.plugin(["AMap.ToolBar",'AMap.Autocomplete','AMap.PlaceSearch'], function() {
+        //设置地位标记为自定义标记
+        var toolBar = new AMap.ToolBar();
+        map.addControl(toolBar);
+        var autoOptions = {
+            // city:'',//城市，默认全国
+            input: "keyword"//使用联想输入的input的id
+        };
+        var autocomplete = new AMap.Autocomplete(autoOptions);
+        var placeSearch = new AMap.PlaceSearch({
+            // city:'',
+            map:map
+        });
+        AMap.event.addListener(autocomplete, "select", function(e){
+        //
+        placeSearch.setCity(e.poi.adcode);
+        placeSearch.search(e.poi.name);
+        console.log(e.poi)
+         let gps=[];
+         gps.push(e.poi.location.lng)
+         gps.push(e.poi.location.lat)
+         _this.Gps=gps;
+         _this.hotelInformation.longitude = e.poi.location.lng;
+         _this.hotelInformation.latitude = e.poi.location.lat;
+        });
+      });
+    }
+  },
+  created() {
+    this.auth_id = this.$route.params.id;
+
+    //console.log(this.auth_id);
+    this.Provincialchange();
+  },
+  mounted() {
+     this.maps();
+     console.log(this.hotelId);
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.imglist {
+  position: relative;
+  display: inline-block;
+  width: 100px;
+}
+.demo-upload-list {
+  display: inline-block;
+  width: 100px;
+  height: 100px;
+  text-align: center;
+  line-height: 100px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fff;
+  position: relative;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  margin-right: 4px;
+}
+.demo-upload-list img {
+  width: 100%;
+  height: 100%;
+}
+.demo-upload-list-cover {
+  display: none;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+.demo-upload-list:hover .demo-upload-list-cover {
+  display: block;
+}
+.demo-upload-list-cover i {
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  margin: 0 10px;
+}
+#keyword{
+  width: 30%;
+  position: absolute;
+  top: 20px;
+  right: 0;
+  z-index: 100;
+  line-height: 30px;
+  font-size: 15px;
+  margin-right: 10px;
+  padding-left: 5px;
+  border-radius: 4px;
+}
+#maps {
+  width: 740px;
+  height: 580px;
+  position: absolute;
+  left: 50%;
+  top: 50px;
+  margin-left: -370px;
+  background: #ffffff;
+  z-index: 11999;
+  border-radius: 12px;
+  border: 2px solid #eee;
+  .maptitle {
+    height: 40px;
+    font-size: 20px;
+    line-height: 40px;
+    text-indent: 20px;
+    background: #eee;
+    div {
+      float: right;
+      height: 100%;
+      width: 100px;
+      cursor: pointer;
+    }
+  }
+  #container {
+    height: 520px;
+    top: 40px;
+  }
+  .Btn {
+    width: 100%;
+    text-align: center;
+    margin-top: 524px;
+    height: 30px;
+  }
+}
+.InputList{
+  div{
+    label{
+      width: 72px;
+      text-align: left;
+    }
+    select{
+      
+    }
+  }
+}
+.packageAdd {
+  width: 70%;
+  min-width: 800px;
+  // min-height: 600px;
+  border: 4px solid #eee;
+  border-radius: 12px;
+  position: absolute;
+  top: 10%;
+  left: 15%;
+  background: #fff;
+  opacity: 1 !important;
+  z-index: 99;
+  padding: 0 0 0 16px;
+  overflow: auto;
+  .packageAdd_title {
+    font-size: 16px;
+    height: 35px;
+    line-height: 35px;
+    button {
+      float: right;
+      padding: 3px 5px;
+      border: none;
+      background: #fff;
+      width: 40px;
+      cursor: pointer;
+      outline: none;
+    }
+  }
+}
+</style>

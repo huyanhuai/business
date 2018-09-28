@@ -1,0 +1,1749 @@
+<template>
+  <div  class="Menu"  v-bind:style="MenuDiv">
+      <p>{{Title}} 
+          <button  @click="close">
+           <Icon type="close"></Icon>
+          </button>         
+      </p>
+
+      <div  v-show="ShowCode1">  
+         <Qrcode  style="text-align:center" :size="200"  :cls="qrCls" :value="qrText" ></Qrcode>
+         <Input v-model="qrText" type="textarea" :rows="4" style="padding:0 20px;"  class="Text_input" ></Input>
+         <div style="text-align:center" >
+              <Button type="success"  @click="copy">复&nbsp;&nbsp;&nbsp;&nbsp;制</Button> 
+        </div>
+      </div>
+
+
+      <div  v-show="ShowCode2" class="SetMeal">
+
+        <div v-show="ShowCode4">
+          <div  class="SetForm">
+            <div>
+               <label>套餐名称</label>
+                <Input v-model="Package.packageName"  class="width70"  :style="[isB?style0: style1]"></Input>
+            </div>
+            <div>
+               <label>套餐类型</label>
+               <Select v-model="productPackageTypeId"   multiple  class="width70"   :style="[isC?style0: style1]">
+                  <Option v-for="item in PackageType" :value="item.value"    :key="item.value">{{item.name}}</Option>
+               </Select>
+            </div>
+            <div>
+               <label>门市价</label>
+               <Input v-model="Package.retailPrice"   class="width70"   ></Input>
+            </div>                       
+          </div>   
+          
+          <div  class="SetForm">
+            <div>
+               <label>销售价</label>
+                <Input v-model="Package.salePrice"  :style="InputStyle"></Input>
+            </div>
+            <div>
+               <label>结算价</label>
+               <Input v-model="Package.settlementPrice"  :style="InputStyle"></Input>
+            </div>
+            <!-- <div>
+               <label>平台佣金(元)</label>
+               <Input v-model="Package.platformCommissionRatio" style="width:40%"></Input>
+               <span class="commission">{{platform}}</span>
+            </div>                        -->
+          </div> 
+          <div class="SetForm">
+            <div>
+               <label>平台佣金(元)</label>
+               <Input v-model="Package.platformCommissionRatio" style="width:45%"></Input>
+               <!-- <span class="commission">{{platform}}</span> -->
+            </div>
+            <div>
+               <label style="width:95px">默认代理佣金(元)</label>
+                <Input v-model="Package.defaultAgentCommissionRatio"  style="width:45%"></Input>
+                <!-- <span class="commission">{{defaultAgent}}</span> -->
+            </div>
+            <div>
+               <label style="width:95px">默认业务佣金(元)</label>
+               <Input v-model="Package.defaultSaleCommissionRatio"  style="width:45%"></Input>
+               <!-- <span class="commission">{{defaultSale}}</span> -->
+            </div>
+          </div>
+          <div :style="[isA?styleA: styleB]" >
+            <h3>* 平台销售价 = 结算价 + 平台佣金 + 默认代理佣金 + 默认业务佣金</h3>
+          </div>
+          <div  class="SetForm">
+              <div>
+               <label>销售时间</label>
+               <Select v-model="Package.saleDateType"  style="width:70%;">
+                  <Option v-for="item in saleDateTypeList" :value="item.name"  :key="item.name">{{item.value}}</Option>
+               </Select>
+            </div>  
+          </div>
+
+          <div class="InputList InputList1"  v-if="Package.saleDateType=='RANGE'">
+              <div class="StopTime">
+                <label for="">销售开始时间</label>
+                <DatePicker type="date" style="width: 70%" v-model="Package.startDate"></DatePicker>
+              </div>
+              <div class="StopTime">
+                <label for="">销售结束日期</label>
+                <DatePicker type="date" style="width: 70%" v-model="Package.endDate"></DatePicker>
+              </div>              
+          </div>
+
+          <div  v-if="Package.saleDateType=='WEEK'">
+              <div class="StopTime">
+                <label for="">选择时间</label>
+                <CheckboxGroup v-model="weekItem"   style="display: inline-block;margin-left: 10px; ">
+                  <Checkbox v-for="item in weekItemList"  :label="item.name"  :key="item.name">
+                      <span>{{item.value}}</span>
+                  </Checkbox>
+                </CheckboxGroup>
+              </div>             
+          </div>       
+
+          <div class="InputList" >
+              <div>
+                <label for="">截止售票时间</label>
+                <TimePicker  class="width70" v-model="Package.endSale" ></TimePicker>
+              </div>
+              <div>
+                <label for="">退款</label>
+                <Select class="width70"   v-model="Package.refundType">
+                    <Option value="REFUND">条件退</Option>
+                    <Option value="NO_REFUND">概不退换</Option>
+                </Select>
+              </div>              
+          </div>
+          <div>
+                <label for="">第三方平台</label>
+                <Select style="width: 70%" v-model="Package.apiConfig">
+                    <Option v-for="item in Thirdparty"  :key="item.name" :value="item.name">{{item.label }}</Option>
+                </Select> 
+          </div>
+          <div class="InputList3" v-show="ZYBtype">
+            <div>
+               <label>第三方票型编码</label>
+               <Input v-model="Package.apiCode"  :style="InputStyle"></Input>
+            </div>
+            <div>
+                <label for="">是否实名制</label>
+                <Select v-model="Package.isRealName" style="width:70%;margin-left:5px;">
+                    <!-- <Option v-for="item in isRealNameList" :value="item.name"  :key="item.name">{{item.value}}</Option> -->
+                    <Option key="1" value="1">是</Option>
+                    <Option key="0" value="0">否</Option>
+                </Select>
+            </div> 
+          </div>
+          <div>
+          <h3 style="font-weight: bold;">海报图片：用于海报链接（宽高比 6：7.5）</h3> <br>
+        <Upload
+            :before-upload="handleUpload"
+            :show-upload-list="false"
+            action="//jsonplaceholder.typicode.com/posts/"> 
+            <img :src="PictureImg" style="width:120px;height:150px;">
+        </Upload>
+        </div>
+          <h3 style="font-weight: bold;">费用须知</h3>
+          <div style="margin-top:10px;">
+              <div style="height:260px;" ref="editors" class="editors"></div>
+
+              <!-- <Button type="warning" @click="addList">添加详情</Button> -->
+              <!-- <Button type="primary" @click="addTitle">添加标题</Button>
+              <Button type="primary" @click="addTextarea">添加文本</Button>
+              <Button type="primary" @click="addImg">添加图片</Button>
+              <div >
+                <div v-for="item in items">
+                  <Input style="width:80%;" type="textarea" :rows="4" placeholder="Enter something..."></Input>
+                </div>
+                <div v-for="title in inadd">
+                  <Input :style="InputStyle" style="" ></Input>
+                </div>
+                <div>
+                  <Input type="file"  :style="InputStyle"></Input>
+                </div>
+                <div style="height:250px" id="contentAdd" ref="contentA" >
+                </div>
+              </div> -->
+              
+          </div>
+          <div style="text-align:center;margin-top:10px;position: relative;z-index: 11000;">
+             <Button  type="success"  @click="Submitpackage" >提&nbsp;&nbsp;&nbsp;&nbsp;交</Button>&nbsp;
+             <Button  @click="submitBack" >返&nbsp;&nbsp;&nbsp;&nbsp;回</Button>
+          </div>
+        </div>
+          
+        <!-- 套餐列表 -->
+          <div style="margin-top:10px;" v-show="ShowCode5">
+             <Button type="primary" class="SetMealAdd" style="margin:0 0 10px 0" @click="toggle">新增套餐</Button>
+             <Table highlight-row  ref="currentRowTable" :columns="ProductTop" :data="ProductList" ></Table>
+             <div style="text-align:right;">
+                <Page  :total="total"   :current.sync="pageNum"  :pageSize="pagesize"   show-elevator></Page>
+             </div>      
+          </div>
+
+    
+    <!-- 对话框 -->
+    <div>
+        <Modal
+            v-model="modelIndex"
+              :title="ModelTitle"
+            @on-ok="ok"
+            @on-cancel="cancel">
+            <p>{{ModalText}}</p>
+        </Modal>
+    </div>
+
+    </div>
+      <!-- 定佣金 -->
+      <div v-show="ShowCode3" style="padding: 0 20px">
+            <div  class="SetForm" style="margin:0px 0px 8px;padding-top:8px;">
+                <div>
+                  <label for="">请选择套餐</label>
+                  <Select class="width70"   :on-change="commissionPackageList"  v-model="commissionForm.productPackageId">
+                       <Option v-for="(item,index) in commissionPackage"  :key="index" :value="item.productPackageId" @click.native="commissionPackageList(index)">{{item.packageName}}</Option>
+                  </Select>
+                </div>
+                <div>
+                  <label for="">请选择代理商</label>
+                  <Select class="width70"   v-model="commissionForm.userProductId">
+                      <Option v-for="(item,index) in commissionAgents" :key="index" :value="item.userProductId">{{item.companyName}}</Option>
+                  </Select>
+                </div>                
+            </div>
+            <div  class="SetForm" style="margin-bottom:8px;">
+                <div>
+                  <label  class="form_label" for="">平台销售价</label>
+                  <Input  :disabled="disabled" v-model="commissionForm.salePrice" style="width:50%"></Input>
+                </div>
+                <div>
+                  <label class="form_label" for="">门市价</label>
+                  <Input  :disabled="disabled" v-model="commissionForm.retailPrice" style="width:50%"></Input>
+                </div>
+                <div>
+                  <label  class="form_label" for="">结算价</label>
+                  <!-- <Input   :disabled="disabled" v-model="commissionForm.settlementPrice"  :style="InputStyle"></Input> -->
+                  <InputNumber  v-model="commissionForm.settlementPrice" style="width:50%"></InputNumber>
+                </div>                                
+            </div>
+            <div  class="SetForm" style="margin-bottom:8px;">
+                <div>
+                  <label  class="form_label" for="">平台佣金</label>
+                  <InputNumber   :disabled="disabled"  v-model="commissionForm.platformCommissionRatio"  style="width:40%"></InputNumber>
+                  <span class="commission">{{platformCommissionRatio1}}</span>
+                </div>
+                <div>
+                  <label  class="form_label" for="">默认代理佣金</label>
+                  <InputNumber v-model="commissionForm.agentCommissionRatio"  style="width:40%"></InputNumber>
+                  <span class="commission">{{agentCommissionRatio1}}</span>
+                </div>    
+                <div>
+                  <label class="form_label"  for="">默认业务佣金</label>
+                  <InputNumber v-model="commissionForm.saleCommissionRatio"  style="width:40%"></InputNumber>
+                  <span class="commission">{{saleCommissionRatio1}}</span>
+                </div>                            
+            </div>
+            <div :style="[isA?styleA: styleB]" >
+            <h3>* 平台销售价 = 结算价 + 平台佣金 + 默认代理佣金 + 默认业务佣金</h3>
+          </div>
+            <div style="text-align:center;margin-top:10px;">
+                <Button type="success"  @click="Commission">提交</Button>
+            </div>                        
+      </div>
+  </div>
+</template>
+
+<script>
+import Qrcode from "v-qrcode";
+import { add0, getDate, withinErrorMargin, hhssmm } from "../../js/public.js";
+import E from "wangeditor";
+export default {
+  props: {
+    TypeList: {
+      type: null
+    },
+    
+  },
+  data() {
+    return {
+      total: null,
+      templateHtml: `<div>
+                        <h3>费用包含</h3>&nbsp; 填写费用的详细信息说明
+                        <h3>入园须知</h3>&nbsp; 填写入园时间，入园地点，取票时间，取票地点，入园方式等
+                        <h3>重要提示</h3>&nbsp; 填写注意事项
+                        <h3>退票说明</h3>&nbsp; 填写是否支持退票（支持：填写退票方式、退票截止时间等）
+                        <h3>改期说明</h3>&nbsp; 是否支持改期（支持：填写改期方式）
+                      </div>`,
+      apiCode: "",
+      isRealName: "",
+      editorImg: null,
+      Thirdparty: [
+        {
+          name: "TONGYOU",
+          label: "同游平台"
+        },
+        {
+          name: "ZYB",
+          label: "智游宝"
+        }
+      ],
+      styleA:{
+        color: 'red'
+      },
+      styleB:{ 
+      },
+      style0:{
+        border: 'red 1px solid',
+        borderRadius: '4px'
+      },
+      style1:{ 
+      },
+      isA: false,
+      isB: false,
+      isC: false,
+      PictureImg: require("../../assets/Home/a11.png"),
+      imglist: "",
+      imglist1: "",
+      inadd: [],
+      items: [],
+      ShowCode4: false,
+      ShowCode5: true,
+      Btnclick:false,
+      platformCommissionRatio1: "",
+      disabled: true,
+      commissionForm: {
+        agentProductPackageId: "",
+        agentUserInfoId: "",
+        productPackageId: "",
+        userProductId: "",
+        settlementPrice: 0,
+        agentCommissionRatio: 0,
+        saleCommissionRatio: 0
+      },
+      commissionPackage: [],
+      commissionAgents: [],
+      auth_id: "",
+      productPackageTypeId: [],
+      ProductList: [],
+      ProductTop: [
+        {
+          title: "套餐名称",
+          key: "packageName",
+          align: "center",
+          width: 150,
+          fixed: "left"
+        },
+        {
+          title: "套餐类型",
+          key: "productPackageTypeId",
+          width: 130,
+          align: "center",
+          render: (h, par) => {
+            // let data=par.productPackageTypeId.spl
+            let type = par.row.productPackageTypeRelativeList;
+            let text = "";
+
+            for (let i = 0; i < this.PackageType.length; i++) {
+              for (let k = 0; k < type.length; k++) {
+                if (type[k].productPackageTypeId == this.PackageType[i].value) {
+                  text += this.PackageType[i].name + "|";
+                }
+              }
+            }
+
+            return text;
+          }
+        },
+        // {
+        //   title: "门市价",
+        //   key: "retailPrice",
+        //   width: 130,
+        //   align: "center"
+        // },
+        {
+          title: "销售价",
+          key: "salePrice",
+          width: 130,
+          align: "center"
+        },
+        {
+          title: "结算价",
+          key: "settlementPrice",
+          width: 130,
+          align: "center"
+        },
+        {
+          title: "平台佣金",
+          key: "platformCommission",
+          width: 130,
+          align: "center"
+        },
+        {
+          title: "默认代理佣金",
+          key: "defaultAgentCommission",
+          width: 130,
+          align: "center"
+        },
+        {
+          title: "默认业务佣金",
+          key: "defaultSaleCommission",
+          width: 130,
+          align: "center"
+        },
+        {
+          title: "销售开始时间",
+          width: 130,
+          key: "startDate",
+          align: "center",
+          render: (h, par) => {
+            return getDate(par.row.startDate);
+          }
+        },
+        {
+          title: "销售结束日期",
+          width: 130,
+          key: "endDate",
+          align: "center",
+          render: (h, par) => {
+            return getDate(par.row.endDate);
+          }
+        },
+        {
+          title: "截止销售时间",
+          width: 130,
+          key: "endSaleStr",
+          align: "center"
+        },
+        {
+          title: "退款",
+          key: "refundType",
+          width: 130,
+          align: "center",
+          render: (h, par) => {
+            let text = par.row.refundType;
+            if (text == "REFUND") {
+              return "条件退";
+            } else {
+              return "概不退换";
+            }
+          }
+        },
+        {
+          title: "操作",
+          key: "startDate",
+          width: 165,
+          fixed: "right",
+          align: "center",
+          render: (h, params) => {
+            return h("div", [
+              h(
+                "Button",
+                {
+                  props: {
+                    type: "success",
+                    size: "small"
+                  },
+                  style: {
+                    marginRight: "5px"
+                  },
+                  on: {
+                    click: () => {
+                      this.PackageEditor(params.index);
+                    }
+                  }
+                },
+                "编辑"
+              ),
+              h(
+                "Button",
+                {
+                  props: {
+                    type: "error",
+                    size: "small"
+                  },
+                  on: {
+                    click: () => {
+                      this.packageremove(params.index);
+                    }
+                  }
+                },
+                "删除"
+              )
+            ]);
+          }
+        }
+      ],
+      PackageType: [],
+      weekItem: [],
+      weekItemList: [
+        { name: "MON", value: "周一" },
+        { name: "TUE", value: "周二" },
+        { name: "WED", value: "周三" },
+        { name: "THU", value: "周四" },
+        { name: "FRI", value: "周五" },
+        { name: "SAT", value: "周六" },
+        { name: "SUN", value: "周日" }
+      ],
+      saleDateTypeList: [
+        { name: "RANGE", value: "区间" },
+        // { name: "WEEK", value: "周期" },
+        { name: "NONE", value: "默认" }
+      ],
+      isRealNameList: [
+        {name: "1", value: "是"},
+        {name: "0", value: "否"}
+      ],
+      ModelTitle: "",
+      ModalText: "",
+      pagesize: 10,
+      pageNum: 1,
+      modelIndex: false,
+      ZYBtype: false,
+      Package: {
+        apiConfig: "TONGYOU",
+        isRealName: "",
+        apiCode: "",
+        saleDateType: "NONE",
+        imglist: "",
+        packageName: "",
+        Package: "",
+        retailPrice: 0,
+        salePrice: 0,
+        settlementPrice: 0,
+        platformCommissionRatio: 0,
+        startDate: "",
+        endDate: "",
+        endSale: "23:59:59",
+        refundType: "NO_REFUND",
+        detail: "",
+        defaultAgentCommissionRatio: 0,
+        defaultSaleCommissionRatio: 0
+      },
+      productPackageId: "",
+      borderTop: [
+        {
+          title: "名称",
+          key: "priceName",
+          align: "center"
+        },
+        {
+          title: "现价",
+          key: "name",
+          align: "center",
+          render(h, params) {
+            return `￥${params.row.originalAmount}￥${params.row.saleAmount}￥${
+              params.row.settlementPrice
+            }`;
+          }
+        },
+        {
+          title: "平台佣金",
+          key: "platformCommissionRatio",
+          width: 80,
+          align: "center",
+          render: (h, params) => {
+            return params.row.platformCommissionRatio + "%";
+          }
+        },
+        {
+          title: "代理佣金",
+          key: "defaultAgentCommissionRatio",
+          width: 80,
+          align: "center",
+          render: (h, params) => {
+            return params.row.defaultAgentCommissionRatio + "%";
+          }
+        },
+        {
+          title: "业务佣金",
+          key: "defaultSaleCommissionRatio",
+          width: 80,
+          align: "center",
+          render: (h, params) => {
+            return params.row.defaultSaleCommissionRatio + "%";
+          }
+        },
+        {
+          title: "状态",
+          key: "name",
+          align: "center",
+          render(h, params) {
+            let text = "";
+            if (params.row.status == 1) {
+              text = "上架";
+            } else {
+              text = "下架";
+            }
+            return text;
+          }
+        },
+        {
+          title: "操作",
+          key: "name",
+          align: "center",
+          render: (h, params) => {
+            return h("div", [
+              h(
+                "Button",
+                {
+                  props: {
+                    type: "primary",
+                    size: "small"
+                  },
+                  style: {
+                    marginRight: "5px"
+                  },
+                  on: {
+                    click: () => {
+                      let {
+                        priceName,
+                        detail,
+                        platformCommissionRatio,
+                        defaultAgentCommissionRatio,
+                        defaultSaleCommissionRatio,
+                        originalAmount,
+                        saleAmount,
+                        settlementPrice,
+                        ruleType,
+                        id
+                      } = this.SetmealList[params.index];
+                      this.SetMealForm.priceName = priceName;
+                      this.SetMealForm.detail = detail;
+                      this.SetMealForm.platformCommissionRatio = platformCommissionRatio;
+                      this.SetMealForm.defaultAgentCommissionRatio = defaultAgentCommissionRatio;
+                      this.SetMealForm.defaultSaleCommissionRatio = defaultSaleCommissionRatio;
+                      this.SetMealForm.originalAmount = originalAmount;
+                      this.SetMealForm.saleAmount = saleAmount;
+                      this.SetMealForm.settlementPrice = settlementPrice;
+                      this.id = id;
+                      this.EditNew = false;
+                      if (ruleType == 0) {
+                        this.TypeString = "周一至周日";
+                      } else if (ruleType == 1) {
+                        this.TypeString = "周一至周四";
+                      } else {
+                        this.TypeString = "周五至周日";
+                      }
+                    }
+                  }
+                },
+                "编辑"
+              ),
+              h(
+                "Button",
+                {
+                  props: {
+                    type: "error",
+                    size: "small"
+                  },
+                  on: {
+                    click: () => {
+                      this.id = this.SetmealList[params.index].id;
+                      this.modelIndex = true;
+                      this.ModalText = "确认删除该套餐吗？";
+                      this.ModelTitle = "删除";
+                    }
+                  }
+                },
+                "删除"
+              )
+            ]);
+          }
+        }
+      ],
+      Title: "",
+      EditNew: true,
+      qrCls: "qrcode",
+      qrText: "",
+      imagePath: require("../../../examples/assets/logo.png"),
+      ShowCode1: false,
+      ShowCode2: false,
+      ShowCode3: false,
+      TypeString: "周一至周日",
+      MenuDiv: "",
+      productId: "",
+      InputStyle: {
+        width: "70%"
+      },
+      SetmealList: [],
+      id: ""
+    };
+  },
+  watch: {
+    "Package.apiConfig": {
+      handler: function(val, oldVal) {
+        if (val == "ZYB") {
+          this.ZYBtype = true;
+        } else {
+          this.ZYBtype = false;
+        }
+      },
+      deep: true
+    },
+    "commissionForm.userProductId": {
+      handler: function(val, oval) {
+        for (let i of this.commissionAgents) {
+          if (i.userProductId == val) {
+            this.commissionForm.agentUserInfoId = i.agentUserInfoId;
+
+            let {
+              agentProductPackageId,
+              agentCommissionRatio,
+              saleCommissionRatio
+            } = i;
+            if (agentProductPackageId == null) {
+              this.commissionForm.agentProductPackageId = 0;
+            } else {
+              this.commissionForm.agentProductPackageId = agentProductPackageId;
+            }
+
+            if (agentCommissionRatio == null) {
+              this.commissionForm.agentCommissionRatio = 0;
+            } else {
+              this.commissionForm.agentCommissionRatio = agentCommissionRatio;
+            }
+
+            if (saleCommissionRatio == null) {
+              this.commissionForm.saleCommissionRatio = 0;
+            } else {
+              this.commissionForm.saleCommissionRatio = saleCommissionRatio;
+            }
+          }
+        }
+      },
+      deep: true
+    },
+    TypeList() {
+      this.Title = this.TypeList[0].title;
+      let { type } = this.TypeList[0];
+      // this.ShowCode = type;
+
+      if (type == 1) {
+        this.MenuDiv = {
+          width: "600px",
+          top: "22%",
+          marginLeft: "-300px"
+        };
+        this.ShowCode1 = true;
+        this.ShowCode2 = false;
+        this.ShowCode3 = false;
+        // this.qrText = this.TypeList[0].productUrl;
+        this.productId = this.TypeList[0].productId;
+        this.axios
+        .get(`${this.AjaxUrl}/ty_business/product/getProductQRCode`, {
+          params: {productId: this.productId}
+        })
+        .then(res => {
+          if (res.errorCode == 200) {
+            console.log(res.data);
+            this.qrText = res.data;
+          }
+        })
+        .catch(err => {});
+      } else if (type == 2) {
+        this.MenuDiv = {
+          width: "75%",
+          marginLeft: "-37.5%",
+          // height: "auto",
+          background: "#fff",
+          borderRadius:"2px",
+          top: "22%",
+          border: "1px solid #eee"
+        };
+        this.ShowCode1 = false;
+        this.ShowCode2 = true;
+        this.ShowCode3 = false;
+        this.productId = this.TypeList[0].productId;
+        this.first();
+      } else if (type == 3) {
+        let pageNum = 0;
+        this.axios
+          .get(`${this.AjaxUrl}/ty_business/user/product/judgeAgent`, {
+            params: {
+              productId: this.productId
+            }
+          })
+          .then(res => {
+            if (res.errorCode == 200) {
+            } else {
+              this.error(err.message);
+              return false;
+            }
+          })
+          .catch(err => {});
+
+        this.MenuDiv = {
+          width: "800px",
+          top: "22%",
+          marginLeft: "-400px"
+        };
+        this.ShowCode1 = false;
+        this.ShowCode2 = false;
+        this.ShowCode3 = true;
+        this.productId = this.TypeList[0].productId;
+
+        this.axios
+          .get(`${this.AjaxUrl}/ty_business/product/package/getList`, {
+            params: {
+              productId: this.productId
+            }
+          })
+          .then(res => {
+            if (res.errorCode == 200) {
+              console.log(res.data.list);
+              this.commissionPackage = res.data.list;
+              this.commissionForm.productPackageId =
+                res.data.list[0].productPackageId;
+              this.commissionForm.platformCommissionRatio = res.data.list[0].platformCommission;
+                console.log(this.commissionForm.platformCommissionRatio);
+              this.commissionForm.retailPrice = res.data.list[0].retailPrice;
+              this.commissionForm.salePrice = res.data.list[0].salePrice;
+              this.commissionForm.settlementPrice = res.data.list[0].settlementPrice;
+
+              let {
+                salePrice,
+                settlementPrice,
+                platformCommissionRatio
+              } = this.commissionForm;
+              this.platformCommissionRatio1 = platformCommissionRatio;
+                // (salePrice - settlementPrice) * platformCommissionRatio / 100 + "元";
+              this.commissionAgentsList();
+            }
+          });
+      } else if (type == 0) {
+        this.MenuDiv = {
+          width: "800px",
+          marginLeft: "-400px"
+        };
+      }
+    },
+    pageNum() {
+      this.first(this.pageNum);
+    }
+  },
+  computed: {
+    agentCommissionRatio1() {
+      let {
+        salePrice,
+        settlementPrice,
+        agentCommissionRatio
+      } = this.commissionForm;
+      
+      if (agentCommissionRatio == undefined || agentCommissionRatio == 0) {
+        return "0元";
+      }
+      let data =
+        agentCommissionRatio + "元";
+      return data;
+    },
+    saleCommissionRatio1() {
+      let {
+        salePrice,
+        settlementPrice,
+        saleCommissionRatio
+      } = this.commissionForm;
+      console.log(saleCommissionRatio)
+      if (saleCommissionRatio == undefined || saleCommissionRatio == 0) {
+        return "0元";
+      }
+      let data =
+        saleCommissionRatio + "元";
+      return data;
+    },
+    ruleType() {
+      if (this.TypeString == "周一至周日") {
+        return 0;
+      } else if (this.TypeString == "周一至周四") {
+        return 1;
+      } else {
+        return 2;
+      }
+    },
+    //平台佣金计算
+    platform: function() {
+      let {
+        salePrice,
+        settlementPrice,
+        platformCommissionRatio
+      } = this.Package;
+      let data =
+        platformCommissionRatio;
+        // (salePrice - settlementPrice) * platformCommissionRatio / 100 + "元";
+      return data;
+    },
+    //代理佣金
+    defaultAgent: function() {
+      let {
+        salePrice,
+        settlementPrice,
+        defaultAgentCommissionRatio
+      } = this.Package;
+      let data =
+      defaultAgentCommissionRatio;
+        // (salePrice - settlementPrice) * defaultAgentCommissionRatio / 100 + "元";
+      return data;
+    },
+    //业务佣金
+    defaultSale: function() {
+      let {
+        salePrice,
+        settlementPrice,
+        defaultSaleCommissionRatio
+      } = this.Package;
+      let data =
+      defaultSaleCommissionRatio;
+        // (salePrice - settlementPrice) * defaultSaleCommissionRatio / 100 + "元";
+      return data;
+    }
+  },
+  methods: {
+    price() {
+      return 
+    },
+
+    //上传海报图片
+    handleUpload(file) {
+      var reader = new FileReader();
+      var _this = this;
+      let data = new FormData();
+      data.append("file", file);
+      this.axios
+        .post(`${this.AjaxUrl}/ty_business/upload`, data)
+        .then(res => {
+          if (res.errorCode == 200) {
+            console.log(res.data);
+            this.imglist = res.data;
+          }else{
+            this.error("图片上传错误")
+          }
+        })
+        .catch(err => {});
+
+      reader.readAsDataURL(file);
+      reader.onload = function(e) {
+        _this.PictureImg = this.result;
+      };
+      return false;
+    },
+    handleImg(){
+        return this.PictureImg;
+        console.log(this.imglist);
+    },
+    addTitle() {
+      this.inadd.push({
+        text: ``
+      })
+    },
+    addTextarea() {
+      this.items.push({
+        text: ''
+      })
+    },
+    toggle() {
+      //新增套餐            
+      this.ShowCode4 = !this.ShowCode4;  
+      this.ShowCode5 = !this.ShowCode5;    
+      this.Newpackage();    
+    },
+    submitBack() {
+      this.ShowCode4 = !this.ShowCode4;  
+      this.ShowCode5 = !this.ShowCode5; 
+    },
+    commissionPackageList(index) {
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/product/package/getList`, {
+          params: {
+            productId: this.productId
+          }
+        })
+        .then(res => {
+          if (res.errorCode == 200) {
+            console.log(res.data.list);
+            this.commissionPackage = res.data.list;
+            this.commissionForm.productPackageId =
+              res.data.list[index].productPackageId;
+            this.commissionForm.platformCommissionRatio =
+              res.data.list[index].platformCommission;
+            this.commissionForm.retailPrice = res.data.list[index].retailPrice;
+            this.commissionForm.salePrice = res.data.list[index].salePrice;
+            this.commissionForm.settlementPrice =
+              res.data.list[index].settlementPrice;
+            this.commissionAgentsList();
+          }
+        });
+    },
+    commissionAgentsList(index = 0) {
+      this.axios
+        .get(
+          `${
+            this.AjaxUrl
+          }/ty_business/product/package/getAgentPackageListByBusiness`,
+          {
+            params: {
+              productId: this.productId,
+              productPackageId: this.commissionForm.productPackageId
+            }
+          }
+        )
+        .then(res => {
+          if (res.errorCode == 200) {
+            // this.commissionForm.userProductId="";
+            this.commissionAgents = res.data.list;
+
+            //console.log(res);
+          }
+        });
+    },
+
+    //佣金提交
+    Commission() {
+      this.Btnclick=true;
+        if (this.commissionForm.userProductId == "") {
+          this.error("请选择代理商");
+          return false;
+        }
+      let {
+        salePrice,
+        settlementPrice,
+        agentProductPackageId,
+        agentUserInfoId,
+        productPackageId,
+        userProductId,
+        agentCommissionRatio,
+        platformCommissionRatio,
+        saleCommissionRatio,
+      } = this.commissionForm;
+      console.log(platformCommissionRatio);
+      console.log(salePrice);
+      console.log(settlementPrice);
+      let num1 = this.accAdd(platformCommissionRatio,settlementPrice);
+      let agentSale = this.accSub(salePrice,num1);
+      console.log(agentSale);
+      if (this.accAdd(agentCommissionRatio,saleCommissionRatio) != agentSale) {
+        this.isA = true;
+        this.error("请输入正确的佣金");
+      }else{
+
+      let productId = this.productId;
+      let data = {};
+
+      data.productId = productId;
+      if(agentProductPackageId == null || agentProductPackageId == ""){
+        data.agentProductPackageId = 0;
+      }else{
+        data.agentProductPackageId = agentProductPackageId;
+      }
+      data.agentUserInfoId = agentUserInfoId;
+      data.productPackageId = productPackageId;
+      data.userProductId = userProductId;
+      data.agentCommission = agentCommissionRatio;
+      data.saleCommission = saleCommissionRatio;
+      data.settlementPrice = settlementPrice;
+      data.platformCommission = platformCommissionRatio;
+      
+      this.axios
+        .post(
+          `${this.AjaxUrl}/ty_business/product/package/saveCommission`,
+          this.qs.stringify(data)
+        )
+        .then(res => {
+          if (res.errorCode == 200) {
+            this.success(res.message);
+            this.commissionAgentsList();
+            this.Btnclick=false;
+          }else{
+            this.error(res.message);
+          }
+        });
+      }
+    },
+    //获取套餐内容
+    PackageEditor(index) {
+      this.ShowCode4 = !this.ShowCode4;  
+      this.ShowCode5 = !this.ShowCode5; 
+      let {
+        apiConfig,
+        apiCode,
+        isRealName,
+        packageName,
+        coverImg,
+        retailPrice,
+        salePrice,
+        settlementPrice,
+        platformCommission,
+        defaultAgentCommission,
+        defaultSaleCommission,
+        productPackageTypeId,
+        startDate,
+        endDate,
+        endSaleStr,
+        refundType,
+        detail,
+        productPackageId,
+        saleDateType,
+        productPackageTypeRelativeList
+      } = this.ProductList[index];
+      this.productPackageTypeId = [];
+      for (let i of productPackageTypeRelativeList) {
+        this.productPackageTypeId.push(i.productPackageTypeId);
+      }
+      this.Package.saleDateType = saleDateType;
+      if (saleDateType == "WEEK") {
+        let { weekItem } = this.ProductList[index];
+        weekItem = weekItem.split("|");
+        for (let i of weekItem) {
+          this.weekItem.push(i);
+        }
+      }
+
+      this.Package.packageName = packageName;
+      this.Package.retailPrice = retailPrice;
+      this.Package.salePrice = salePrice;
+      this.Package.settlementPrice = settlementPrice;
+      this.Package.platformCommissionRatio = platformCommission;
+      this.Package.defaultAgentCommissionRatio = defaultAgentCommission;
+      this.Package.defaultSaleCommissionRatio = defaultSaleCommission;
+      //console.log(startDate, endDate, endSaleStr);
+      this.Package.startDate = getDate(startDate);
+      this.Package.endDate = getDate(endDate);
+      this.Package.endSale = endSaleStr;
+      this.Package.refundType = refundType;
+      this.Package.detail = detail;
+      this.productPackageId = productPackageId;
+
+      this.PictureImg = this.ImgUrl + coverImg + "_small.jpg";
+      console.log(coverImg);
+      var editors = new E(this.$refs.editors);
+      // editors.customConfig.uploadImgShowBase64 = true;
+      editors.customConfig.colors = [
+        '#000000',
+        '#eeece0',
+        '#1c487f',
+        '#4d80bf',
+        '#c24f4a',
+        '#8baa4a',
+        '#7b5ba1',
+        '#46acc8',
+        '#f9963b',
+        '#ffffff',
+        '#0000C6',
+        '#FF0000',
+        '#00FF00',
+        '#0000FF',
+        '#FFFF00',
+        '#00FFFF',
+        '#FF00FF',
+        '#C0C0C0'
+    ];
+      var config = getCookie('token');
+      console.log(config);
+      var ImgUrl = this.ImgUrl;
+      editors.customConfig.uploadImgServer = `${this.AjaxUrl}/ty_business/upload`;
+      var data = new FormData();
+      editors.customConfig.uploadImgParams = {
+          file: "file"
+      }
+      editors.customConfig.uploadFileName = 'file';
+      // editors.customConfig.uploadImgMaxSize = 10 * 1024 * 1024;
+        editors.customConfig.uploadImgHeaders = {
+            // 'Accept' : 'multipart/form-data',
+            'token' : config
+        };
+        editors.customConfig.uploadImgHooks = {
+            before: function (xhr, editor, files) {
+                 this.editorImg = files[0].name.split(".")
+            },
+            error: function (xhr, editor) {
+                alert("2:"+xhr);
+                // 图片上传出错时触发
+                // xhr 是 XMLHttpRequst 对象，editor 是编辑器对象
+            },
+            fail: function (xhr, editor, result) {
+                alert("1:"+xhr);
+            },
+            success:function(xhr, editor, result){
+                console.log(result);
+            },
+            customInsert: function (insertImg, result, editor, files) {
+                // 图片上传并返回结果，自定义插入图片的事件（而不是编辑器自动插入图片！！！）
+                // insertImg 是插入图片的函数，editor 是编辑器对象，result 是服务器端返回的结果
+                let ext = this.editorImg;
+                if(ext[1] == "png"){
+                  insertImg(ImgUrl+result.data+'.png');
+                }else if(ext[1] == "jpg"){
+                  insertImg(ImgUrl+result.data+'.jpg');
+                }
+                console.log(result.data);
+                
+            }
+        };
+      editors.customConfig.onchange = html => {
+        this.Package.detail = html;
+      };
+      editors.create();
+      editors.txt.html(detail);
+      this.pageAdd = true;
+
+      this.Package.apiConfig = apiConfig;
+      console.log(this.Package.apiConfig);
+      if (this.Package.apiConfig == "ZYB") {
+          this.Package.apiCode = apiCode;
+          this.Package.isRealName = isRealName.toString();
+        }
+      
+    },
+    //套餐删除
+    packageremove(index) {
+      this.$Modal.confirm({
+        title: "警告",
+        content: "<p>确认删除该套餐吗？</p>",
+        onOk: () => {
+          let url = `${this.AjaxUrl}/ty_business/product/package/delete`;
+          let data = {};
+          data.productPackageId = this.ProductList[index].productPackageId;
+
+          data.auth_id = this.auth_id;
+          console.log(data);
+          this.axios
+            .post(url, this.qs.stringify(data))
+            .then(res => {
+              if(res.errorCode == 200){
+                this.success("操作成功！");
+                this.first();
+              }else{
+                this.error(res.message);
+              }
+            })
+            .catch(err => {});
+        },
+        onCancel: () => {
+          // this.$Message.info("Clicked cancel");
+        }
+      });
+    },
+    //减法计算
+    accSub(arg1,arg2){
+      var r1,r2,m,n;
+      try{r1=arg1.toString().split(".")[1].length}catch(e){r1=0}
+      try{r2=arg2.toString().split(".")[1].length}catch(e){r2=0}
+      m=Math.pow(10,Math.max(r1,r2));
+      //last modify by deeka
+      //动态控制精度长度
+      n=(r1>=r2)?r1:r2;
+      return ((arg1*m-arg2*m)/m).toFixed(n);
+    },
+    //加法计算
+    accAdd(arg1,arg2) {
+     var r1,r2,m;
+     try{r1=arg1.toString().split(".")[1].length}catch(e){r1=0}
+     try{r2=arg2.toString().split(".")[1].length}catch(e){r2=0}
+     m=Math.pow(10,Math.max(r1,r2));
+     return (arg1*m+arg2*m)/m;
+    },
+    //套餐提交
+    Submitpackage() {
+      let data = {};
+      let {
+        apiConfig,
+        apiCode,
+        isRealName,
+        retailPrice,
+        coverImg,	
+        salePrice,
+        settlementPrice,
+        platformCommissionRatio,
+        defaultAgentCommissionRatio,
+        defaultSaleCommissionRatio,
+        packageName,
+        startDate,
+        endDate,
+        endSale,
+        refundType,
+        detail,
+        saleDateType
+      } = this.Package;
+      if (this.Package.packageName == "" || this.Package.packageName == null) {
+            this.isB = true;
+          }
+      // if (this.productPackageTypeId == "" || this.productPackageTypeId == null) {
+      //       this.isC = true;
+      //     }
+      if (this.Package.endSale == "" || this.Package.endSale == null) {
+            this.error("请输入截止售票时间!");
+          }
+      data.apiConfig = apiConfig;
+      if (this.ZYBtype) {
+          // let { apiCode, isRealName } = this;
+          if (!apiCode || !isRealName) {
+            this.error("所有内容都必须填写!");
+            return false;
+          }
+          data.apiCode = apiCode;
+          data.isRealName = isRealName;
+        }
+
+      data.productId = this.productId;
+      console.log(data.productId);
+
+      if (endSale != "") {
+        endSale = hhssmm(endSale);
+        data.isEndSale = 1;
+        data.endSale = endSale;
+        
+        console.log(data.endSale);
+      }
+      data.saleDateType = saleDateType;
+      if (saleDateType == "NONE") {
+      } else if (saleDateType == "RANGE") {
+        startDate = getDate(startDate);
+        endDate = getDate(endDate);
+        data.startDate = startDate;
+        data.endDate = endDate;
+        console.log(data.endDate);
+      } else {
+        let { weekItem } = this;
+        let text = "";
+        for (let i = 0; i < weekItem.length; i++) {
+          if (i + 1 == weekItem.length) {
+            text += weekItem[i];
+          } else {
+            text += weekItem[i] + "|";
+          }
+        }
+        data.weekItem = text;
+      }
+      console.log(data.weekItem);
+      let num1 = this.accAdd(Number(settlementPrice),Number(platformCommissionRatio));
+      let num2 = this.accAdd(Number(defaultAgentCommissionRatio),Number(defaultSaleCommissionRatio));
+      let num3 = this.accAdd(num1,num2);
+      console.log(this.accAdd(num1,num2));
+      console.log(Number(salePrice));
+      if(num3 != Number(salePrice)){
+        this.error("平台销售价 = 结算价 + 平台佣金 + 默认代理佣金 + 默认业务佣金")
+        this.isA = true;
+      }else{
+      data.retailPrice = Number(retailPrice);
+      data.salePrice = Number(salePrice);
+      data.settlementPrice = Number(settlementPrice);
+      data.platformCommission = Number(platformCommissionRatio);
+      
+      data.defaultAgentCommission = Number(defaultAgentCommissionRatio);
+      data.defaultSaleCommission = Number(defaultSaleCommissionRatio);
+      data.packageName = packageName;
+      data.coverImg = this.imglist;
+      console.log(data.coverImg);
+
+      data.refundType = refundType;
+      data.detail = detail;
+      data.auth_id = this.auth_id;
+      data.productPackageTypeId = "";
+      console.log(this.productPackageTypeId);
+
+      for (let i = 0; i < this.productPackageTypeId.length; i++) {
+        if (i + 1 == this.productPackageTypeId.length) {
+          data.productPackageTypeId += this.productPackageTypeId[i];
+        } else {
+          data.productPackageTypeId += this.productPackageTypeId[i] + "|";
+        }
+      }
+
+      let url = "";
+      if (this.productPackageId != "") {
+        url = `${this.AjaxUrl}/ty_business/product/package/update`;
+        data.productPackageId = this.productPackageId;
+      } else {
+        url = `${this.AjaxUrl}/ty_business/product/package/insert`;
+      }
+
+      this.axios
+        .post(url, this.qs.stringify(data))
+        .then(res => {
+          if(res.errorCode == 200){
+            this.success("操作成功！");
+            this.productPackageId = "";
+            this.ShowCode5 = !this.ShowCode5;
+            this.ShowCode4 = !this.ShowCode4;
+            this.first();
+            this.Newpackage();
+          }else if(res.errorCode == 400){
+            this.error("所有内容都必须填写!");
+          }else{
+            this.error(res.message);
+          }
+          //this.$emit('Shutdown',true)
+        })
+        .catch(err => {});
+        }
+    },
+    //套餐内容清空
+    Newpackage() {
+      this.isA = false;
+      this.isB = false;
+      this.isC = false;
+      for (let key in this.Package) {
+        this.Package[key] = "";
+      }
+      var editors = new E(this.$refs.editors);
+      // editors.customConfig.uploadImgShowBase64 = true;
+      editors.customConfig.colors = [
+        '#000000',
+        '#eeece0',
+        '#1c487f',
+        '#4d80bf',
+        '#c24f4a',
+        '#8baa4a',
+        '#7b5ba1',
+        '#46acc8',
+        '#f9963b',
+        '#ffffff',
+        '#0000C6',
+        '#FF0000',
+        '#00FF00',
+        '#0000FF',
+        '#FFFF00',
+        '#00FFFF',
+        '#FF00FF',
+        '#C0C0C0'
+    ];
+    var config = getCookie('token');
+    var ImgUrl = this.ImgUrl;
+    editors.customConfig.uploadImgServer = `${this.AjaxUrl}/ty_business/upload`;
+    var data = new FormData();
+    editors.customConfig.uploadImgParams = {
+        file: "file"
+    }
+    editors.customConfig.uploadFileName = 'file';
+    // editors.customConfig.uploadImgMaxSize = 10 * 1024 * 1024;
+      editors.customConfig.uploadImgHeaders = {
+          // 'Accept' : 'multipart/form-data',
+          'token' : config
+      };
+      editors.customConfig.uploadImgHooks = {
+          before: function (xhr, editor, files) {
+                this.editorImg = files[0].name.split(".")
+          },
+          error: function (xhr, editor) {
+              alert("2:"+xhr);
+              // 图片上传出错时触发
+              // xhr 是 XMLHttpRequst 对象，editor 是编辑器对象
+          },
+          fail: function (xhr, editor, result) {
+              alert("1:"+xhr);
+          },
+          success:function(xhr, editor, result){
+              console.log(result)
+          },
+          customInsert: function (insertImg, result, editor) {
+              // 图片上传并返回结果，自定义插入图片的事件（而不是编辑器自动插入图片！！！）
+              // insertImg 是插入图片的函数，editor 是编辑器对象，result 是服务器端返回的结果
+                let ext = this.editorImg;
+                if(ext[1] == "png"){
+                  insertImg(ImgUrl+result.data+'.png');
+                }else if(ext[1] == "jpg"){
+                  insertImg(ImgUrl+result.data+'.jpg');
+                }
+          }
+      };
+      editors.customConfig.onchange = html => {
+        this.Package.detail = html;
+      };
+      editors.create();
+      editors.txt.html(this.templateHtml);
+      this.Package.apiConfig = "TONGYOU";
+      this.Package.apiCode = "";
+      this.Package.isRealName = "";
+      this.Package.detail = "";
+      this.Package.endSale = "23:59:59";
+      // this.Package.coverImg = "";
+      this.Package.saleDateType = "NONE";
+      this.Package.refundType = "REFUND";
+      this.Package.retailPrice = 0;
+      this.Package.salePrice = 0;
+      this.Package.settlementPrice = 0;
+      this.Package.platformCommissionRatio = 0;
+      this.Package.defaultAgentCommissionRatio = 0;
+      this.Package.defaultSaleCommissionRatio = 0;
+      this.productPackageTypeId = [];
+      this.PictureImg = require("../../assets/Home/a11.png");
+    },
+    //获取列表
+    first(pageNum = 1) {
+      let pageSize = 2;
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/product/package/getList`, {
+          params: {
+            productId: this.productId,
+            pageSize,
+            pageNum
+          }
+        })
+        .then(res => {
+          if(res.errorCode == 200){
+            this.ProductList = res.data.list;
+            console.log(this.ProductList);
+            // this.pagesize = res.data.list.length;
+            this.total = res.data.total;
+          }else if(res.errorCode == 303){
+            this.error(res.message);
+          }else{
+            this.error(res.message);
+          }
+        })
+        .catch(err => {
+          //this.error(err.data.msg);
+        });
+
+    },
+    ok() {
+      this.axios
+        .post(
+          `${this.AjaxUrl}/merchant/product/deletePrice.do`,
+          this.qs.stringify({ id: this.id, auth_id: this.auth_id })
+        )
+        .then(res => {
+          this.$Message.info("操作成功！");
+          this.first();
+        })
+        .catch(err => {});
+    },
+    cancel() {},
+    copy() {
+      let Text_input = document.querySelector(".ivu-input");
+      Text_input.select(); // 选择对象
+      document.execCommand("Copy"); // 执行浏览器复制命令
+    },
+    close() {
+      this.ShowCode5 = true;
+      this.ShowCode4 = false;
+      this.productPackageId = "";
+      // this.first();
+      this.Newpackage();
+      this.$emit("close", false);
+    },
+    success(text) {
+      this.$Message.success(text);
+    },
+    error(text) {
+      this.$Message.error(text);
+    }
+  },
+  components: {
+    Qrcode
+  },
+  mounted() {
+    this.auth_id = this.$route.params.id;
+    this.axios
+      .get(`${this.AjaxUrl}/ty_business/product/package/type/allPackageType`, {})
+      .then(res => {
+        if (res.errorCode == 200) {
+          for (let i of res.data) {
+            this.PackageType.push({
+              name: i.typeName,
+              value: i.productPackageTypeId
+            });
+          }
+        }else if(res.errorCode == 303){
+          this.error(res.message);
+        }else{
+          this.error(res.message);
+        }
+      })
+      .catch(err => {});
+
+    var editors = new E(this.$refs.editors);
+    editors.customConfig.colors = [
+        '#000000',
+        '#eeece0',
+        '#1c487f',
+        '#4d80bf',
+        '#c24f4a',
+        '#8baa4a',
+        '#7b5ba1',
+        '#46acc8',
+        '#f9963b',
+        '#ffffff',
+        '#0000C6',
+        '#FF0000',
+        '#00FF00',
+        '#0000FF',
+        '#FFFF00',
+        '#00FFFF',
+        '#FF00FF',
+        '#C0C0C0'
+    ];
+    var config = getCookie('token');
+    var ImgUrl = this.ImgUrl;
+    editors.customConfig.uploadImgServer = `${this.AjaxUrl}/ty_business/upload`;
+    var data = new FormData();
+    editors.customConfig.uploadImgParams = {
+        file: "file"
+    }
+    editors.customConfig.uploadFileName = 'file';
+    // editors.customConfig.uploadImgMaxSize = 10 * 1024 * 1024;
+      editors.customConfig.uploadImgHeaders = {
+          // 'Accept' : 'multipart/form-data',
+          'token' : config
+      };
+      editors.customConfig.uploadImgHooks = {
+          before: function (xhr, editor, files) {
+              this.editorImg = files[0].name.split(".")
+          },
+          error: function (xhr, editor) {
+              alert("2:"+xhr);
+              // 图片上传出错时触发
+              // xhr 是 XMLHttpRequst 对象，editor 是编辑器对象
+          },
+          fail: function (xhr, editor, result) {
+              alert("1:"+xhr);
+          },
+          success:function(xhr, editor, result){
+              console.log(result)
+          },
+          customInsert: function (insertImg, result, editor) {
+              // 图片上传并返回结果，自定义插入图片的事件（而不是编辑器自动插入图片！！！）
+              // insertImg 是插入图片的函数，editor 是编辑器对象，result 是服务器端返回的结果
+              let ext = this.editorImg;
+              if(ext[1] == "png"){
+                insertImg(ImgUrl+result.data+'.png');
+              }else if(ext[1] == "jpg"){
+                insertImg(ImgUrl+result.data+'.jpg');
+              }
+              console.log(result.data);
+          }
+      };
+    editors.customConfig.onchange = html => {
+      this.Package.detail = html;
+    };
+      editors.create();
+  },
+  updated() {},
+};
+
+</script>
+
+<style scoped lang="scss">
+.form_label {
+  width: 72px !important;
+}
+
+.commission {
+  display: inline-block;
+  width: 25%;
+  height: 100%;
+}
+.SetMeal {
+  min-height: 600px;
+  padding: 0 10px;
+  overflow: auto;
+  > p {
+    height: 30px;
+    line-height: 30px;
+  }
+}
+
+.SetForm {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  > div {
+    flex: 1;
+    // z-index: 13000;
+    > label {
+      display: inline-block;
+      width: 72px;
+      height: 100%;
+    }
+  }
+}
+.SetForm1{
+  >div{
+    z-index: 13001;
+
+  }
+}
+.SetForm2{
+  >div{
+    z-index: 13002;
+
+  }
+}
+.InputList {
+  display: flex;
+  background: #ffffff;
+  div {
+    flex: 1;
+    margin: 4px 0;
+    z-index: 13003;
+    label {
+      display: inline-block;
+      width: 72px;
+      text-align: left;
+      // padding-right: 20px;
+    }
+  }
+}
+.InputList1 {
+  div {
+    z-index: 12000;
+    }
+}
+.InputList3{
+  display: flex;
+  div{
+    flex: 1;
+    margin: 4px 0;
+    label{
+      display: inline-block;
+    }
+  }
+}
+.ivu-select-dropdown{
+  z-index: 100;
+}
+.Menu {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: 450px;
+  margin-top: -5%;
+  > p {
+    padding: 0 80px 0 20px;
+    height: 42px;
+    line-height: 42px;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+    color: #333;
+    overflow: hidden;
+    background-color: #f8f8f8;
+    border-radius: 2px 2px 0 0;
+    border: 1px solid #bbb;
+    border-bottom: none;
+    position: relative;
+    button {
+      position: absolute;
+      right: 10px;
+      border: none;
+      background: #f8f8f8;
+      width: 40px;
+      cursor: pointer;
+      outline: none;
+    }
+  }
+  > div {
+    width: 100%;
+    height: calc(100% - 42px);
+    border: 1px solid #bbb;
+    border-top: none;
+    background: #fff;
+  }
+}
+
+.width70 {
+  width: 70%;
+}
+
+.price{
+  padding: 10px 0;
+}
+
+</style>

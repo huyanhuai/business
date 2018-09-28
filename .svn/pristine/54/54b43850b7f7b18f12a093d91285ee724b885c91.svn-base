@@ -1,0 +1,1735 @@
+<template>
+  <div  class="Menu"  v-bind:style="MenuDiv">
+      <p>{{Title}} 
+          <button  @click="close">
+           <Icon type="close"></Icon>
+          </button>         
+      </p>
+
+      <div  v-show="ShowCode1">  
+         <Qrcode  style="text-align:center" :size="200"  :cls="qrCls" :value="qrText" ></Qrcode>
+         <Input v-model="qrText" type="textarea" :rows="4" style="padding:0 20px;"  class="Text_input" ></Input>
+         <div style="text-align:center" >
+              <Button type="success"  @click="copy">复&nbsp;&nbsp;&nbsp;&nbsp;制</Button> 
+        </div>
+      </div>
+
+      <!-- 房间页 -->
+      <div v-show="ShowCode6" class="SetMeal">
+           <div v-show="RoomBtn">
+                <div style="text-align:left;text-indent: 20px;"> 
+                    <Button type="success" @click.stop="NewRoom">新增房间</Button>
+                </div>
+                <div style="margin-top:30px;" > 
+                    <Table  highlight-row  ref="RowTable" :columns="RoomTop" :data="RoomList"></Table> 
+                </div>
+           </div>
+           
+           <div v-show="RoomShow" >
+                <div class="Package"> 
+                  <div class="packageTop"> {{RoomTitle}} </div>
+                  <div v-show="roomInt"  style="margin-top:15px;"> 
+                    <div class="InputList">
+                        <div>
+                            <label for="">房间名称</label>
+                            <Input style="width: 70%" v-model="hotelRoom.roomName"></Input>
+                        </div>
+                        <div>
+                            <label for="">建筑面积(m²)</label>
+                            <Input style="width: 70%" v-model="hotelRoom.floorArea"></Input>
+                        </div>
+                    </div>      
+                    <div class="InputList">
+                        <div>
+                          <label for="">床型</label>
+                          <Select v-model="hotelRoom.bedType"  style="width: 70%">
+                              <Option  key="0" value="SINGLE">单人床</Option>
+                              <Option  key="1" value="DOUBLE">双人床</Option>
+                              <Option  key="1" value="FAMILY">家庭床</Option>
+                          </Select>
+                        </div>
+                        <div>
+                        <label for="">最大入驻人数</label>
+                        <Input style="width: 70%" v-model="hotelRoom.peopleNum"></Input>
+                        </div>
+                    </div>
+            
+                    <div class="InputList" >
+                        <div>
+                            <label for="">默认库存</label>
+                            <Input v-model="hotelRoom.defaultRepertory"  style="width: 70%"></Input>
+                        </div>
+                        <div>
+                            <label for="">房间详情</label>
+                            <Input style="width: 70%" v-model="hotelRoom.detail"></Input>
+                        </div>
+                    </div>
+                    <div style="text-align:center;padding:5px 0;"> 
+                        <Button type="success" @click="subRoom"> 下一步</Button>
+                        <Button type="success" @click="backRoom"> 返回</Button>
+                    </div>
+                  </div>
+                  <div v-show="roomImg"  style="padding:20px 0 0 5px;background:#fff;"> 
+                      <h3>房间图片 </h3>
+                      <Upload :before-upload="handleUpload" :show-upload-list="false" action="//jsonplaceholder.typicode.com/posts/"> 
+                          <img :src="PictureImg" style="width:120px;height:120px;">
+                      </Upload> 
+                      <h3>库存设置 </h3>
+                      <div style="display: flex;width:100%;">
+                        <div style="width:410px;">
+                          <Calendar ref="Calendar" :markDateMore="arr" v-on:isToday="clickToday" v-on:choseDay="clickDay" v-on:changeMonth="changeDate"></Calendar>
+                        </div>
+                        <div style="padding-left:20px;">
+                          <p>{{time}}</p>库存：
+                            <Input v-model="repertoryNums" style="width: 150px;"></Input>
+                            <Button type="success" @click="subRepertory">确定</Button>
+                            <div>
+                              <p v-for="item in shuju" :value="item" :key="item">{{item}}</p>
+                            </div>
+                        </div>
+                      </div>
+                      <div style="text-align:center;padding:5px 0;margin-top:15px;"> 
+                          <Button type="success" @click="closeRoom"> 下一步</Button>
+                      </div>
+                  </div>
+                </div>
+            </div>
+      </div>
+
+      <!-- 套餐页 -->
+      <div  v-show="ShowCode2" class="SetMeal">
+
+        <div v-show="ShowCode4">
+          <div  class="SetForm">
+            <div>
+               <label>套餐名称</label>
+                <Input v-model="Package.comboName"  class="width70"  :style="[isB?style0: style1]"></Input>
+            </div>
+            <div>
+               <label>是否包含早餐</label>
+               <Select v-model="Package.includeBreakfast"  style="width: 70%">
+                   <Option  key="0" value="0">否</Option>
+                   <Option  key="1" value="1">是</Option>
+               </Select>
+            </div>
+                                  
+          </div>   
+          
+          <div  class="SetForm">
+            <div>
+               <label>门市价</label>
+               <Input v-model="Package.retailPrice"   class="width70"   ></Input>
+            </div> 
+            <div>
+               <label>销售价</label>
+                <Input v-model="Package.salePrice"  :style="InputStyle"></Input>
+            </div>
+            <div>
+               <label>结算价</label>
+               <Input v-model="Package.settlementPrice"  :style="InputStyle"></Input>
+            </div>
+          </div> 
+          <div class="SetForm">
+            <div>
+               <label>平台佣金(元)</label>
+               <Input v-model="Package.platformCommission" style="width:70%"></Input>
+            </div>
+            <div>
+               <label style="width:95px">默认代理佣金(元)</label>
+                <Input v-model="Package.defaultAgentCommission"  style="width:70%"></Input>
+            </div>
+            <div>
+               <label style="width:95px">默认业务佣金(元)</label>
+               <Input v-model="Package.defaultSaleCommission"  style="width:70%"></Input>
+            </div>
+          </div>
+          <div class="SetForm" :style="[isA?styleA: styleB]" >
+            <h3>* 平台销售价 = 结算价 + 平台佣金 + 默认代理佣金 + 默认业务佣金</h3>
+          </div>
+          <!-- <div  class="SetForm">
+              <div>
+               <label>销售时间</label>
+               <Select v-model="Package.saleDateType"  style="width:70%;">
+                  <Option v-for="item in saleDateTypeList" :value="item.name"  :key="item.name">{{item.value}}</Option>
+               </Select>
+            </div>  
+          </div>
+
+          <div class="InputList InputList1"  v-if="Package.saleDateType=='RANGE'">
+              <div class="StopTime">
+                <label for="">销售开始时间</label>
+                <DatePicker type="date" style="width: 70%" v-model="Package.startDate"></DatePicker>
+              </div>
+              <div class="StopTime">
+                <label for="">销售结束日期</label>
+                <DatePicker type="date" style="width: 70%" v-model="Package.endDate"></DatePicker>
+              </div>              
+          </div>
+
+          <div  v-if="Package.saleDateType=='WEEK'">
+              <div class="StopTime">
+                <label for="">选择时间</label>
+                <CheckboxGroup v-model="weekItem"   style="display: inline-block;margin-left: 10px; ">
+                  <Checkbox v-for="item in weekItemList"  :label="item.name"  :key="item.name">
+                      <span>{{item.value}}</span>
+                  </Checkbox>
+                </CheckboxGroup>
+              </div>             
+          </div>       
+
+          <div class="InputList" >
+              <div>
+                <label for="">截止售票时间</label>
+                <TimePicker  class="width70" v-model="Package.endSale" ></TimePicker>
+              </div>
+              <div>
+                <label for="">退款</label>
+                <Select class="width70"   v-model="Package.refundType">
+                    <Option value="REFUND">条件退</Option>
+                    <Option value="NO_REFUND">概不退换</Option>
+                </Select>
+              </div>              
+          </div>
+          <div>
+                <label for="">第三方平台</label>
+                <Select style="width: 70%" v-model="Package.apiConfig">
+                    <Option v-for="item in Thirdparty"  :key="item.name" :value="item.name">{{item.label }}</Option>
+                </Select> 
+          </div>
+          <div class="InputList3" v-show="ZYBtype">
+            <div>
+               <label>第三方票型编码</label>
+               <Input v-model="Package.apiCode"  :style="InputStyle"></Input>
+            </div>
+            <div>
+                <label for="">是否实名制</label>
+                <Select v-model="Package.isRealName" style="width:70%;margin-left:5px;">
+                    <Option v-for="item in isRealNameList" :value="item.name"  :key="item.name">{{item.value}}</Option>
+                    <Option key="1" value="1">是</Option>
+                    <Option key="0" value="0">否</Option>
+                </Select>
+            </div> 
+          </div>
+          <div>
+          <h3 style="font-weight: bold;">海报图片：用于海报链接（宽高比 6：7.5）</h3> <br>
+        <Upload
+            :before-upload="handleUpload"
+            :show-upload-list="false"
+            action="//jsonplaceholder.typicode.com/posts/"> 
+            <img :src="PictureImg" style="width:120px;height:150px;">
+        </Upload>
+        </div>
+           <div style="height:35px;">
+              <h3 style="font-weight: bold;float:left;padding-top:8px;">费用须知</h3> 
+              <Button type="success" @click="preview" style="float:right;margin-right:10px;">预览内容</Button>
+           </div>
+          <div style="margin-top:10px;">
+              <div style="height:260px;" ref="editors" class="editors"></div>
+              
+          </div> -->
+          <div style="text-align:center;margin-top:140px;margin-bottom:10px;">
+             <Button  type="success" :loading="subLoading"  @click="Submitpackage" >提&nbsp;&nbsp;&nbsp;&nbsp;交</Button>&nbsp;&nbsp;
+             <Button  @click="submitBack" >返&nbsp;&nbsp;&nbsp;&nbsp;回</Button>
+          </div>
+        </div>
+        <!-- 富文本 -->
+          <Modal
+            v-model="productInfoShow"
+            title="详情"
+            width="740px">
+                <p ref="edit"></p>
+          </Modal>
+        <!-- 套餐列表 -->
+          <div style="margin-top:10px;" v-show="ShowCode5">
+            <div class="SetForm">
+              <div> 
+              <label for="">房间名称</label>
+              <Select v-model="hotelRoomName"  style="width: 60%">
+                  <Option v-for="(item,index) in RoomList"  :key="index" :value="item.hotelRoomId" @click.native="first(item.hotelRoomId)">
+                    {{item.roomName}}</Option>
+              </Select>
+            </div>
+            <div>
+              <Button type="primary" class="SetMealAdd" style="margin:0 0 10px 0" @click="toggle">新增套餐</Button>
+            </div>
+            </div>
+            
+             <Table highlight-row  ref="currentRowTable" :columns="ProductTop" :data="ProductList" ></Table>
+             <div style="text-align:right;">
+                <Page  :total="total"   :current.sync="pageNum"  :pageSize="pagesize"   show-elevator></Page>
+             </div>      
+          </div>
+
+    
+    <!-- 对话框 -->
+    <div>
+        <Modal
+            v-model="modelIndex"
+              :title="ModelTitle"
+            @on-ok="ok"
+            @on-cancel="cancel">
+            <p>{{ModalText}}</p>
+        </Modal>
+    </div>
+
+    </div>
+      <!-- 定佣金 -->
+      <div v-show="ShowCode3" style="padding: 0 20px">
+            <div  class="SetForm" style="margin:0px 0px 8px;padding-top:8px;">
+                <div>
+                  <label for="">请选择套餐</label>
+                  <Select class="width70"   :on-change="commissionPackageList"  v-model="commissionForm.productPackageId">
+                       <Option v-for="(item,index) in commissionPackage"  :key="index" :value="item.productPackageId" @click.native="commissionPackageList(index)">{{item.packageName}}</Option>
+                  </Select>
+                </div>
+                <div>
+                  <label for="">请选择代理商</label>
+                  <Select class="width70"   v-model="commissionForm.userProductId">
+                      <Option v-for="(item,index) in commissionAgents" :key="index" :value="item.userProductId">{{item.companyName}}</Option>
+                  </Select>
+                </div>                
+            </div>
+            <div  class="SetForm" style="margin-bottom:10px;">
+                <div>
+                  <label  class="form_label" for="">平台销售价</label>
+                  <Input  :disabled="disabled" v-model="commissionForm.salePrice" style="width:50%"></Input>
+                </div>
+                <div>
+                  <label class="form_label" for="">门市价</label>
+                  <Input  :disabled="disabled" v-model="commissionForm.retailPrice" style="width:50%"></Input>
+                </div>
+                <div>
+                  <label  class="form_label" for="">结算价</label>
+                  <!-- <Input   :disabled="disabled" v-model="commissionForm.settlementPrice"  :style="InputStyle"></Input> -->
+                  <InputNumber  v-model="commissionForm.settlementPrice" style="width:50%"></InputNumber>
+                </div>                                
+            </div>
+            <div  class="SetForm" style="margin-bottom:10px;">
+                <div>
+                  <label  class="form_label" for="">平台佣金</label>
+                  <InputNumber   :disabled="disabled"  v-model="commissionForm.platformCommissionRatio"  style="width:40%"></InputNumber>
+                  <span class="commission">{{platformCommissionRatio1}}</span>
+                </div>
+                <div>
+                  <label  class="form_label" for="">默认代理佣金</label>
+                  <InputNumber v-model="commissionForm.agentCommissionRatio"  style="width:40%"></InputNumber>
+                  <span class="commission">{{agentCommissionRatio1}}</span>
+                </div>    
+                <div>
+                  <label class="form_label"  for="">默认业务佣金</label>
+                  <InputNumber v-model="commissionForm.saleCommissionRatio"  style="width:40%"></InputNumber>
+                  <span class="commission">{{saleCommissionRatio1}}</span>
+                </div>                            
+            </div>
+            <div :style="[isA?styleA: styleB]" >
+            <h3>* 平台销售价 = 结算价 + 平台佣金 + 默认代理佣金 + 默认业务佣金</h3>
+          </div>
+            <div style="text-align:center;margin-top:15px;">
+                <Button type="success" :loading="subLoading0"  @click="Commission">提交</Button>
+            </div>                        
+      </div>
+  </div>
+</template>
+
+<script>
+import Qrcode from "v-qrcode";
+import { add0, getDate, withinErrorMargin, hhssmm, accAdd, accSub } from "../../js/public.js";
+import E from "wangeditor";
+import Calendar from '../vue-calendar-component/index.js';
+export default {
+  props: {
+    TypeList: {
+      type: null
+    },
+    
+  },
+  data() {
+    return {
+      time: "",
+      shuju: [],
+      repertoryNums: "0",
+      arr: [
+        {
+          date: '2018/6/1',
+          className: 'mark1'
+        },
+        {
+          date: '2018/6/2',
+          className: 'mark1'
+        },
+        {
+          date: '2018/6/13',
+          className: 'mark2'
+        }
+      ],
+      total: null,
+      productInfoShow: false,
+      subLoading: false,
+      subLoading0: false,
+      editorImg: null,
+      styleA:{
+        color: 'red'
+      },
+      styleB:{ 
+      },
+      style0:{
+        border: 'red 1px solid',
+        borderRadius: '4px'
+      },
+      style1:{ 
+      },
+      isA: false,
+      isB: false,
+      isC: false,
+      PictureImg: require("../../assets/Home/a11.png"),
+      imglist: "",
+      imglist1: "",
+      inadd: [],
+      items: [],
+      roomInt: true,
+      roomImg: false,
+      ShowCode4: false,
+      ShowCode5: true,
+      ShowCode6: false,
+      RoomBtn: true,
+      RoomShow: false,
+      RoomTitle: "新增房间",
+      hotelRoom: {
+        roomName: "",
+        floorArea: "",	
+        bedType: "",
+        peopleNum: "",
+        defaultRepertory: "",	
+        // coverImgUrl: "",	
+        detail: "",
+      },
+      hotelId: "",
+      hotelRoomId: "",
+      lastRoomId: "",
+      hotelRoomComboId: "",
+      Btnclick:false,
+      platformCommissionRatio1: "",
+      disabled: true,
+      commissionForm: {
+        agentProductPackageId: "",
+        agentUserInfoId: "",
+        productPackageId: "",
+        userProductId: "",
+        settlementPrice: 0,
+        agentCommissionRatio: 0,
+        saleCommissionRatio: 0
+      },
+      commissionPackage: [],
+      commissionAgents: [],
+      auth_id: "",
+      productPackageTypeId: [],
+      RoomList: [],
+      RoomTop: [
+        {
+          title: "房间名称",
+          key: "roomName",
+          align: "center",
+          width: 140,
+        },
+        {
+          title: "建筑面积(m²)",
+          key: "floorArea",
+          align: "center"
+        },
+        {
+          title: "床型",
+          key: "bedType",
+          align: "center"
+        },
+        {
+          title: "最大入住人数",
+          key: "peopleNum",
+          align: "center"
+        },
+        {
+          title: "默认库存",
+          key: "defaultRepertory",
+          align: "center"
+        },
+        {
+          title: "详情",
+          key: "detail",
+          align: "center"
+        },
+        {
+          title: "操作",
+          key: "startDate",
+          width: 160,
+          fixed: "right",
+          align: "center",
+          render: (h, params) => {
+            return h("div", [
+              h(
+                "Button",
+                {
+                  props: {
+                    type: "success",
+                    size: "small"
+                  },
+                  style: {
+                    marginRight: "5px"
+                  },
+                  on: {
+                    click: () => {
+                      this.editRoom(params.index);
+                    }
+                  }
+                },
+                "编辑"
+              ),
+              h(
+                "Button",
+                {
+                  props: {
+                    type: "error",
+                    size: "small"
+                  },
+                  on: {
+                    click: () => {
+                      this.roomRemove(params.index);
+                    }
+                  }
+                },
+                "删除"
+              ),
+            ]);
+          }
+        }
+      ],
+      hotelRoomName: "",
+      ProductList: [],
+      ProductTop: [
+        {
+          title: "套餐名称",
+          key: "comboName",
+          align: "center",
+          width: 150,
+          fixed: "left"
+        },
+        {
+          title: "是否包含早餐",
+          key: "includeBreakfast",
+          align: "center",
+          render: (h, par) => {
+            let num = par.row.includeBreakfast;
+            if (num == 0) {
+              return "否";
+            } else {
+              return "是";
+            }
+          }
+        },
+        {
+          title: "门市价",
+          key: "retailPrice",
+          align: "center"
+        },
+        {
+          title: "销售价",
+          key: "salePrice",
+          align: "center"
+        },
+        {
+          title: "结算价",
+          key: "settlementPrice",
+          align: "center"
+        },
+        {
+          title: "平台佣金",
+          key: "platformCommission",
+          align: "center"
+        },
+        {
+          title: "默认代理佣金",
+          key: "defaultAgentCommission",
+          align: "center"
+        },
+        {
+          title: "默认业务佣金",
+          key: "defaultSaleCommission",
+          align: "center"
+        },
+        {
+          title: "操作",
+          key: "startDate",
+          width: 165,
+          fixed: "right",
+          align: "center",
+          render: (h, params) => {
+            return h("div", [
+              h(
+                "Button",
+                {
+                  props: {
+                    type: "success",
+                    size: "small"
+                  },
+                  style: {
+                    marginRight: "5px"
+                  },
+                  on: {
+                    click: () => {
+                      this.PackageEditor(params.index);
+                    }
+                  }
+                },
+                "编辑"
+              ),
+              h(
+                "Button",
+                {
+                  props: {
+                    type: "error",
+                    size: "small"
+                  },
+                  on: {
+                    click: () => {
+                      this.packageremove(params.index);
+                    }
+                  }
+                },
+                "删除"
+              )
+            ]);
+          }
+        }
+      ],
+      PackageType: [],
+      isRealNameList: [
+        {name: "1", value: "是"},
+        {name: "0", value: "否"}
+      ],
+      ModelTitle: "",
+      ModalText: "",
+      pagesize: 10,
+      pageNum: 1,
+      modelIndex: false,
+      ZYBtype: false,
+      Package: {
+        comboName: "",
+        includeBreakfast: "0",
+        coverImg: "",
+        retailPrice: 0,
+        salePrice: 0,
+        settlementPrice: 0,
+        platformCommission: 0,
+        defaultAgentCommissionRatio: 0,
+        defaultSaleCommissionRatio: 0,
+      },
+      productPackageId: "",
+      borderTop: [
+        {
+          title: "名称",
+          key: "priceName",
+          align: "center"
+        },
+        {
+          title: "现价",
+          key: "name",
+          align: "center",
+          render(h, params) {
+            return `￥${params.row.originalAmount}￥${params.row.saleAmount}￥${
+              params.row.settlementPrice
+            }`;
+          }
+        },
+        {
+          title: "平台佣金",
+          key: "platformCommissionRatio",
+          width: 80,
+          align: "center",
+          render: (h, params) => {
+            return params.row.platformCommissionRatio + "%";
+          }
+        },
+        {
+          title: "代理佣金",
+          key: "defaultAgentCommissionRatio",
+          width: 80,
+          align: "center",
+          render: (h, params) => {
+            return params.row.defaultAgentCommissionRatio + "%";
+          }
+        },
+        {
+          title: "业务佣金",
+          key: "defaultSaleCommissionRatio",
+          width: 80,
+          align: "center",
+          render: (h, params) => {
+            return params.row.defaultSaleCommissionRatio + "%";
+          }
+        },
+        {
+          title: "状态",
+          key: "name",
+          align: "center",
+          render(h, params) {
+            let text = "";
+            if (params.row.status == 1) {
+              text = "上架";
+            } else {
+              text = "下架";
+            }
+            return text;
+          }
+        },
+        {
+          title: "操作",
+          key: "name",
+          align: "center",
+          render: (h, params) => {
+            return h("div", [
+              h(
+                "Button",
+                {
+                  props: {
+                    type: "primary",
+                    size: "small"
+                  },
+                  style: {
+                    marginRight: "5px"
+                  },
+                  on: {
+                    click: () => {
+                      let {
+                        priceName,
+                        detail,
+                        platformCommissionRatio,
+                        defaultAgentCommissionRatio,
+                        defaultSaleCommissionRatio,
+                        originalAmount,
+                        saleAmount,
+                        settlementPrice,
+                        ruleType,
+                        id
+                      } = this.SetmealList[params.index];
+                      this.SetMealForm.priceName = priceName;
+                      this.SetMealForm.detail = detail;
+                      this.SetMealForm.platformCommissionRatio = platformCommissionRatio;
+                      this.SetMealForm.defaultAgentCommissionRatio = defaultAgentCommissionRatio;
+                      this.SetMealForm.defaultSaleCommissionRatio = defaultSaleCommissionRatio;
+                      this.SetMealForm.originalAmount = originalAmount;
+                      this.SetMealForm.saleAmount = saleAmount;
+                      this.SetMealForm.settlementPrice = settlementPrice;
+                      this.id = id;
+                      this.EditNew = false;
+                      if (ruleType == 0) {
+                        this.TypeString = "周一至周日";
+                      } else if (ruleType == 1) {
+                        this.TypeString = "周一至周四";
+                      } else {
+                        this.TypeString = "周五至周日";
+                      }
+                    }
+                  }
+                },
+                "编辑"
+              ),
+              h(
+                "Button",
+                {
+                  props: {
+                    type: "error",
+                    size: "small"
+                  },
+                  on: {
+                    click: () => {
+                      this.id = this.SetmealList[params.index].id;
+                      this.modelIndex = true;
+                      this.ModalText = "确认删除该套餐吗？";
+                      this.ModelTitle = "删除";
+                    }
+                  }
+                },
+                "删除"
+              )
+            ]);
+          }
+        }
+      ],
+      Title: "",
+      EditNew: true,
+      qrCls: "qrcode",
+      qrText: "",
+      imagePath: require("../../../examples/assets/logo.png"),
+      ShowCode1: false,
+      ShowCode2: false,
+      ShowCode3: false,
+      TypeString: "周一至周日",
+      MenuDiv: "",
+      productId: "",
+      InputStyle: {
+        width: "70%"
+      },
+      SetmealList: [],
+      id: ""
+    };
+  },
+  created() {
+    function format(date, index) {
+      date = new Date(date);
+      return `${date.getFullYear()}-${date.getMonth() + 1}-${index}`;
+    }
+    this.arr = [
+      {
+        date: format(new Date(), 1),
+        className: 'mark1'
+      },
+      {
+        date: format(new Date(), 2),
+        className: 'mark1'
+      },
+      {
+        date: format(new Date(), 13),
+        className: 'mark2'
+      }
+    ];
+  },
+  watch: {
+    "commissionForm.userProductId": {
+      handler: function(val, oval) {
+        for (let i of this.commissionAgents) {
+          if (i.userProductId == val) {
+            this.commissionForm.agentUserInfoId = i.agentUserInfoId;
+
+            let {
+              agentProductPackageId,
+              agentCommissionRatio,
+              saleCommissionRatio
+            } = i;
+            if (agentProductPackageId == null) {
+              this.commissionForm.agentProductPackageId = 0;
+            } else {
+              this.commissionForm.agentProductPackageId = agentProductPackageId;
+            }
+
+            if (agentCommissionRatio == null) {
+              this.commissionForm.agentCommissionRatio = 0;
+            } else {
+              this.commissionForm.agentCommissionRatio = agentCommissionRatio;
+            }
+
+            if (saleCommissionRatio == null) {
+              this.commissionForm.saleCommissionRatio = 0;
+            } else {
+              this.commissionForm.saleCommissionRatio = saleCommissionRatio;
+            }
+          }
+        }
+      },
+      deep: true
+    },
+    TypeList() {
+      this.Title = this.TypeList[0].title;
+      let { type } = this.TypeList[0];
+      // this.ShowCode = type;
+
+      if (type == 1) {
+        this.MenuDiv = {
+          width: "600px",
+          top: "22%",
+          marginLeft: "-300px"
+        };
+        this.ShowCode1 = true;
+        this.ShowCode2 = false;
+        this.ShowCode3 = false;
+        
+        this.productId = this.TypeList[0].productId;
+        this.axios
+        .get(`${this.AjaxUrl}/ty_business/product/getProductQRCode`, {
+          params: {productId: this.productId}
+        })
+        .then(res => {
+          if (res.errorCode == 200) {
+            console.log(res.data);
+            this.qrText = res.data;
+          }
+        })
+        .catch(err => {});
+      } else if (type == 2) {
+        this.MenuDiv = {
+          width: "70%",
+          marginLeft: "-35%",
+          // height: "auto",
+          background: "#fff",
+          borderRadius:"5px",
+          top: "22%",
+          border: "1px solid #eee"
+        };
+        this.ShowCode1 = false;
+        this.ShowCode2 = true;
+        this.ShowCode3 = false;
+        this.ShowCode6 = false;
+        this.ShowCode5 = true;
+        this.ShowCode4 = false;
+        this.hotelId = this.TypeList[0].hotelId;
+        this.HotelRoomList();
+        // this.first();
+      } else if (type == 3) {
+        this.ShowCode1 = false;
+        this.ShowCode2 = false;
+        this.ShowCode3 = false;
+        this.ShowCode6 = true;
+        this.RoomShow = false;
+        this.RoomBtn = true;
+        this.MenuDiv = {
+          width: "60%",
+          top: "22%",
+          marginLeft: "-30%"
+        };
+        this.hotelId = this.TypeList[0].hotelId;
+        this.HotelRoomList();
+        // let pageNum = 0;
+        // this.axios
+        //   .get(`${this.AjaxUrl}/ty_business/user/product/judgeAgent`, {
+        //     params: {
+        //       productId: this.productId
+        //     }
+        //   })
+        //   .then(res => {
+        //     if (res.errorCode == 200) {
+        //     } else {
+        //       this.error(err.message);
+        //       return false;
+        //     }
+        //   })
+        //   .catch(err => {});
+
+        // this.MenuDiv = {
+        //   width: "800px",
+        //   top: "22%",
+        //   marginLeft: "-400px"
+        // };
+        // this.ShowCode1 = false;
+        // this.ShowCode2 = false;
+        // this.ShowCode3 = true;
+        // this.productId = this.TypeList[0].productId;
+
+        // this.axios
+        //   .get(`${this.AjaxUrl}/ty_business/product/package/getList`, {
+        //     params: {
+        //       productId: this.productId
+        //     }
+        //   })
+        //   .then(res => {
+        //     if (res.errorCode == 200) {
+        //       console.log(res.data.list);
+        //       this.commissionPackage = res.data.list;
+        //       this.commissionForm.productPackageId =
+        //         res.data.list[0].productPackageId;
+        //       this.commissionForm.platformCommissionRatio = res.data.list[0].platformCommission;
+        //         console.log(this.commissionForm.platformCommissionRatio);
+        //       this.commissionForm.retailPrice = res.data.list[0].retailPrice;
+        //       this.commissionForm.salePrice = res.data.list[0].salePrice;
+        //       this.commissionForm.settlementPrice = res.data.list[0].settlementPrice;
+
+        //       let {
+        //         salePrice,
+        //         settlementPrice,
+        //         platformCommissionRatio
+        //       } = this.commissionForm;
+        //       this.platformCommissionRatio1 = platformCommissionRatio;
+        //         // (salePrice - settlementPrice) * platformCommissionRatio / 100 + "元";
+        //       this.commissionAgentsList();
+        //     }
+        //   });
+      } else if (type == 0) {
+        this.MenuDiv = {
+          width: "800px",
+          marginLeft: "-400px"
+        };
+      }
+    },
+    pageNum() {
+      this.first(this.pageNum);
+    }
+  },
+  computed: {
+    agentCommissionRatio1() {
+      let {
+        salePrice,
+        settlementPrice,
+        agentCommissionRatio
+      } = this.commissionForm;
+      
+      if (agentCommissionRatio == undefined || agentCommissionRatio == 0) {
+        return "0元";
+      }
+      let data =
+        agentCommissionRatio + "元";
+      return data;
+    },
+    saleCommissionRatio1() {
+      let {
+        salePrice,
+        settlementPrice,
+        saleCommissionRatio
+      } = this.commissionForm;
+      console.log(saleCommissionRatio)
+      if (saleCommissionRatio == undefined || saleCommissionRatio == 0) {
+        return "0元";
+      }
+      let data =
+        saleCommissionRatio + "元";
+      return data;
+    },
+    ruleType() {
+      if (this.TypeString == "周一至周日") {
+        return 0;
+      } else if (this.TypeString == "周一至周四") {
+        return 1;
+      } else {
+        return 2;
+      }
+    },
+  },
+  methods: {
+    // 库存
+    subRepertory() {
+      if(this.time != ""){
+        this.shuju.push(this.time + " 库存：" + this.repertoryNums)
+      }else {
+        this.error("请选择日期");
+        return false
+      }
+      let data = {};
+      data.hotelRoomId = this.lastRoomId;
+      data.rDate = this.time;
+      data.repertory = this.repertoryNums;
+      this.axios
+        .post(`${this.AjaxUrl}/ty_business/hotel/room/repertory/setting`, this.qs.stringify(data))
+        .then(res => {
+          if (res.errorCode == 200) {
+            this.success(res.message);
+          }else{
+            this.error(res.message);
+          }
+        })
+        .catch(err => {});
+    },
+    clickDay(data) {
+      console.log('选中了', data); //选中某天
+      let time = data.split("/");
+      let h = time[0];
+      let m = time[1];
+      let d = time[2];
+      if(m < 10){
+        m = "0" + m;
+      }
+      if(d < 10){
+        d = "0" + d;
+      }
+      this.time = h + "-" + m + "-" + d;  
+    },
+    clickToday(data) {
+      console.log('跳到了本月今天', data); //跳到了本月
+    },
+    changeDate(data) {
+      console.log('左右点击切换月份', data); //左右点击切换月份
+    },
+
+    // 关闭房间弹框
+    closeRoom() {
+      this.RoomShow = !this.RoomShow;
+      this.roomInt = true;
+      this.roomImg = false;
+      this.RoomBtn = true;
+    },
+
+    // 房间提交
+    subRoom() {
+      let url = "";
+      let data = this.hotelRoom;
+      console.log(this.hotelRoom);
+
+      if(this.RoomTitle == "新增房间") {
+        url = `${this.AjaxUrl}/ty_business/hotel/room/insert`;
+      }else {
+        url = `${this.AjaxUrl}/ty_business/hotel/room/update`;
+        data.hotelRoomId = this.hotelRoomId;
+      }
+      for (let key in this.hotelRoom) {
+          if (this.hotelRoom[key] == "") {
+            this.error("所有内容都必须填写!");
+            return false;
+          }
+        }
+      data.hotelId = this.hotelId;
+      this.axios
+        .post(url,this.qs.stringify(data))
+        .then(res => {
+          if(res.errorCode == 200){
+            // this.RoomShow = false;
+            // this.RoomBtn = true;
+            this.roomInt = false;
+            this.roomImg = true;
+            this.success(res.message);
+            this.HotelRoomList();
+
+          }else if(res.errorCode == 303){
+            this.error(res.message);
+          }else{
+            this.error(res.message);
+          }
+          
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+
+    // 返回房间列表
+    backRoom() {
+        this.RoomBtn = true;
+        this.RoomShow = false;
+    },
+
+    // 获取房间列表
+    HotelRoomList() {
+      this.RoomList = [];
+      let data = {
+          params: {
+            hotelId: this.hotelId
+          }
+        };
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/hotel/room/getList`, data)
+        .then(res => {
+          if (res.errorCode == 200) {
+            this.RoomList = res.data;
+            this.hotelRoomId = res.data[0].hotelRoomId;
+            this.hotelRoomName = res.data[0].hotelRoomId;
+            if(this.RoomTitle == "新增房间"){
+               this.lastRoomId = res.data[res.data.length-1].hotelRoomId;
+            }
+            this.first(this.hotelRoomId);
+          }else if(res.errorCode == 303){
+            this.error(res.message);
+          }else{
+            this.error(res.message);
+          }
+        })
+        .catch(err => {});
+    },
+
+    // 新增房间
+    NewRoom() {
+      this.RoomBtn = false;
+      this.RoomShow = true;
+      this.hotelRoomId = "";
+      this.RoomTitle = "新增房间";
+      this.hotelRoom.roomName = "";
+      this.hotelRoom.floorArea = "";
+      this.hotelRoom.bedType = "";
+      this.hotelRoom.peopleNum = "";
+      this.hotelRoom.defaultRepertory = "";
+      this.hotelRoom.detail = "";
+      this.time = "";
+      this.shuju = [];
+      this.repertoryNums = "0";
+      this.lastRoomId = "";
+      // for (let key in this.hotelRoom) {
+      //   this.hotelRoom[key] = "";
+      // }
+    },
+
+    // 编辑房间
+    editRoom(index) {
+      this.RoomTitle = "编辑房间";
+      let {
+        roomName,
+        floorArea,	
+        bedType,
+        peopleNum,
+        defaultRepertory,	
+        detail,
+        hotelRoomId,
+      } = this.RoomList[index];
+
+      this.hotelRoom.roomName = roomName;
+      this.hotelRoom.floorArea = floorArea;
+      this.hotelRoom.bedType = bedType;
+      this.hotelRoom.peopleNum = peopleNum;
+      this.hotelRoom.defaultRepertory = defaultRepertory;
+      this.hotelRoom.detail = detail;
+      
+      this.hotelRoomId = hotelRoomId;
+      this.lastRoomId = hotelRoomId;
+      console.log(this.lastRoomId);
+      this.time = "";
+      this.shuju = [];
+      this.repertoryNums = "0";
+
+      let pictureList = this.RoomList[index].hotelRoomPictures;
+      // this.imglist = "";
+      // // this.imglistId = [];
+      // for (let i of pictureList) {
+      //   this.imglist = i.pictureUrl;
+      //   this.PictureImg = this.ImgUrl + i.pictureUrl + "_small.jpg";
+      //   // this.imglistId.push({ id: i.hotelPictureId });
+      // }
+      console.log(pictureList);
+      this.RoomShow = true;
+      this.RoomBtn = false;
+      this.ShowCode6 = true;
+    },
+
+    // 删除房间
+    roomRemove(index) {
+      this.$Modal.confirm({
+        title: "警告",
+        content: "<p>确认删除该房间吗？</p>",
+        onOk: () => {
+          let url = `${this.AjaxUrl}/ty_business/hotel/room/delete`;
+          let data = {};
+          data.hotelRoomId = this.RoomList[index].hotelRoomId;
+          console.log(data);
+          this.axios
+            .post(url, this.qs.stringify(data))
+            .then(res => {
+              if(res.errorCode == 200) {
+                this.HotelRoomList();
+                this.success("操作成功！");
+              }
+            })
+            .catch(err => {});
+        },
+        onCancel: () => {
+          // this.$Message.info("Clicked cancel");
+        }
+      });
+    },
+    price() {
+      return 
+    },
+    //预览
+    preview() {
+      this.productInfoShow = true;
+      this.$refs.edit.innerHTML = this.Package.detail;
+    },
+    //上传房间图片
+    handleUpload(file) {
+      var reader = new FileReader();
+      var _this = this;
+      let data = new FormData();
+      data.append("sort", this.imglist.length);
+      data.append("hotelId", this.hotelId);
+      data.append("hotelRoomId", this.lastRoomId);
+      data.append("hotelRoomPicture", file);
+      this.axios
+        .post(`${this.AjaxUrl}/ty_business/hotel/picture/upload`,data)
+        .then(res => {
+          if (res.errorCode == 200) {
+            this.imglist = res.data;
+            reader.readAsDataURL(file);
+            reader.onload = function(e) {
+            _this.PictureImg = this.result;
+            };
+          }else{
+            this.error(res.message);
+          }
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+    handleImg(){
+        return this.PictureImg;
+        console.log(this.imglist);
+    },
+    addTitle() {
+      this.inadd.push({
+        text: ``
+      })
+    },
+    addTextarea() {
+      this.items.push({
+        text: ''
+      })
+    },
+    toggle() {
+      //新增套餐            
+      this.ShowCode4 = !this.ShowCode4;  
+      this.ShowCode5 = !this.ShowCode5;    
+      this.Newpackage();    
+    },
+    submitBack() {
+      this.ShowCode4 = !this.ShowCode4;  
+      this.ShowCode5 = !this.ShowCode5; 
+    },
+    commissionPackageList(index) {
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/product/package/getList`, {
+          params: {
+            productId: this.productId
+          }
+        })
+        .then(res => {
+          if (res.errorCode == 200) {
+            console.log(res.data.list);
+            this.commissionPackage = res.data.list;
+            this.commissionForm.productPackageId =
+              res.data.list[index].productPackageId;
+            this.commissionForm.platformCommissionRatio =
+              res.data.list[index].platformCommission;
+            this.commissionForm.retailPrice = res.data.list[index].retailPrice;
+            this.commissionForm.salePrice = res.data.list[index].salePrice;
+            this.commissionForm.settlementPrice =
+              res.data.list[index].settlementPrice;
+            this.commissionAgentsList();
+          }
+        });
+    },
+    commissionAgentsList(index = 0) {
+      this.axios
+        .get(
+          `${
+            this.AjaxUrl
+          }/ty_business/product/package/getAgentPackageListByBusiness`,
+          {
+            params: {
+              productId: this.productId,
+              productPackageId: this.commissionForm.productPackageId
+            }
+          }
+        )
+        .then(res => {
+          if (res.errorCode == 200) {
+            // this.commissionForm.userProductId="";
+            this.commissionAgents = res.data.list;
+
+            //console.log(res);
+          }
+        });
+    },
+
+    //佣金提交
+    Commission() {
+      this.Btnclick=true;
+        if (this.commissionForm.userProductId == "") {
+          this.error("请选择代理商");
+          return false;
+        }
+      let {
+        salePrice,
+        settlementPrice,
+        agentProductPackageId,
+        agentUserInfoId,
+        productPackageId,
+        userProductId,
+        agentCommissionRatio,
+        platformCommissionRatio,
+        saleCommissionRatio,
+      } = this.commissionForm;
+      console.log(platformCommissionRatio);
+      console.log(salePrice);
+      console.log(settlementPrice);
+      let num1 = accAdd(platformCommissionRatio,settlementPrice);
+      let agentSale = accSub(salePrice,num1);
+      console.log(agentSale);
+      if (accAdd(agentCommissionRatio,saleCommissionRatio) != agentSale) {
+        this.isA = true;
+        this.error("请输入正确的佣金");
+      }else{
+
+      let productId = this.productId;
+      let data = {};
+
+      data.productId = productId;
+      if(agentProductPackageId == null || agentProductPackageId == ""){
+        data.agentProductPackageId = 0;
+      }else{
+        data.agentProductPackageId = agentProductPackageId;
+      }
+      data.agentUserInfoId = agentUserInfoId;
+      data.productPackageId = productPackageId;
+      data.userProductId = userProductId;
+      data.agentCommission = agentCommissionRatio;
+      data.saleCommission = saleCommissionRatio;
+      data.settlementPrice = settlementPrice;
+      data.platformCommission = platformCommissionRatio;
+      this.subLoading0 = true;
+      this.axios
+        .post(
+          `${this.AjaxUrl}/ty_business/product/package/saveCommission`,
+          this.qs.stringify(data)
+        )
+        .then(res => {
+          if (res.errorCode == 200) {
+            this.subLoading0 = false;
+            this.success(res.message);
+            this.commissionAgentsList();
+            this.Btnclick=false;
+          }else{
+            this.subLoading0 = false;
+            this.error(res.message);
+          }
+        });
+      }
+    },
+    //获取套餐内容
+    PackageEditor(index) {
+      this.ShowCode4 = !this.ShowCode4;  
+      this.ShowCode5 = !this.ShowCode5; 
+      let {
+        coverImg,
+        comboName,
+        retailPrice,
+        salePrice,
+        settlementPrice,
+        platformCommission,
+        defaultAgentCommission,
+        defaultSaleCommission,
+        hotelRoomComboId,
+        hotelRoomId,
+        includeBreakfast,
+      } = this.ProductList[index];
+      console.log(this.ProductList[index]);
+      this.productPackageTypeId = [];
+
+      this.Package.comboName = comboName;
+      this.Package.includeBreakfast = includeBreakfast.toString();
+      this.Package.retailPrice = retailPrice;
+      this.Package.salePrice = salePrice;
+      this.Package.settlementPrice = settlementPrice;
+      this.Package.platformCommission = platformCommission;
+      this.Package.defaultAgentCommission = defaultAgentCommission;
+      this.Package.defaultSaleCommission = defaultSaleCommission;
+      this.imglist = coverImg;
+      this.hotelRoomId = hotelRoomId;
+      this.hotelRoomComboId = hotelRoomComboId;
+      this.pageAdd = true;
+      
+    },
+    //套餐删除
+    packageremove(index) {
+      this.$Modal.confirm({
+        title: "警告",
+        content: "<p>确认删除该套餐吗？</p>",
+        onOk: () => {
+          let url = `${this.AjaxUrl}/ty_business/hotel/room/combo/delete`;
+          let data = {};
+          data.hotelRoomComboId = this.ProductList[index].hotelRoomComboId;
+
+          data.auth_id = this.auth_id;
+          console.log(data);
+          this.axios
+            .post(url, this.qs.stringify(data))
+            .then(res => {
+              if(res.errorCode == 200){
+                this.success("操作成功！");
+                this.first(this.hotelRoomId);
+              }else{
+                this.error(res.message);
+              }
+            })
+            .catch(err => {});
+        },
+        onCancel: () => {
+          // this.$Message.info("Clicked cancel");
+        }
+      });
+    },
+    
+    //套餐提交
+    Submitpackage() {
+      let data = {};
+      let {
+        comboName,
+        includeBreakfast,
+        retailPrice,
+        coverImg,	
+        salePrice,
+        settlementPrice,
+        platformCommission,
+        defaultAgentCommission,
+        defaultSaleCommission,
+
+      } = this.Package;
+      if (this.Package.comboName == "" || this.Package.comboName == null) {
+            this.isB = true;
+            this.error("请填写套餐名称");
+            return false;
+          }
+
+      data.hotelRoomId = this.hotelRoomId;
+      data.includeBreakfast = includeBreakfast;
+
+      let num1 = accAdd(Number(settlementPrice),Number(platformCommission));
+      let num2 = accAdd(Number(defaultAgentCommission),Number(defaultSaleCommission));
+      let num3 = accAdd(num1,num2);
+      if(num3 != Number(salePrice)){
+        this.error("平台销售价 = 结算价 + 平台佣金 + 默认代理佣金 + 默认业务佣金")
+        this.isA = true;
+      }else{
+      data.retailPrice = Number(retailPrice);
+      data.salePrice = Number(salePrice);
+      data.settlementPrice = Number(settlementPrice);
+      data.platformCommission = Number(platformCommission);
+      
+      data.defaultAgentCommission = Number(defaultAgentCommission);
+      data.defaultSaleCommission = Number(defaultSaleCommission);
+      data.comboName = comboName;
+
+      data.auth_id = this.auth_id;
+      this.subLoading = true;
+      let url = "";
+      if (this.hotelRoomComboId != "" && this.hotelRoomComboId != null) {
+        url = `${this.AjaxUrl}/ty_business/hotel/room/combo/update`;
+        data.hotelRoomComboId = this.hotelRoomComboId;
+      } else {
+        url = `${this.AjaxUrl}/ty_business/hotel/room/combo/insert`;
+      }
+
+      this.axios
+        .post(url, this.qs.stringify(data))
+        .then(res => {
+          if(res.errorCode == 200){
+            this.subLoading = false;
+            this.success("操作成功！");
+            this.productPackageId = "";
+            this.ShowCode5 = !this.ShowCode5;
+            this.ShowCode4 = !this.ShowCode4;
+            this.first(this.hotelRoomId);
+            this.Newpackage();
+          }else if(res.errorCode == 400){
+            this.subLoading = false;
+            this.error("所有内容都必须填写!");
+          }else{
+            this.subLoading = false;
+            this.error(res.message);
+          }
+          //this.$emit('Shutdown',true)
+        })
+        .catch(err => {});
+        }
+    },
+    //套餐内容清空
+    Newpackage() {
+      this.isA = false;
+      this.isB = false;
+      this.isC = false;
+      for (let key in this.Package) {
+        this.Package[key] = "";
+      }
+      this.Package.comboName == "";
+      this.Package.includeBreakfast == "0";
+      this.Package.coverImg = "";
+      this.Package.retailPrice = 0;
+      this.Package.salePrice = 0;
+      this.Package.settlementPrice = 0;
+      this.Package.platformCommission = 0;
+      this.Package.defaultAgentCommission = 0;
+      this.Package.defaultSaleCommission = 0;
+      this.productPackageTypeId = [];
+      // this.PictureImg = require("../../assets/Home/a11.png");
+      this.imglist = "";
+      this.hotelRoomComboId = "";
+    },
+    //获取列表
+    first(id) {
+      this.hotelRoomId = id;
+      console.log(this.hotelRoomId);
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/hotel/room/combo/getList`, {
+          params: {
+            hotelRoomId: this.hotelRoomId,
+          }
+        })
+        .then(res => {
+          if(res.errorCode == 200){
+            this.ProductList = res.data;
+            this.total = res.data.total;
+          }else if(res.errorCode == 303){
+            this.error(res.message);
+          }else{
+            this.error(res.message);
+          }
+        })
+        .catch(err => {
+          //this.error(err.data.msg);
+        });
+
+    },
+    ok() {
+      this.axios
+        .post(
+          `${this.AjaxUrl}/merchant/product/deletePrice.do`,
+          this.qs.stringify({ id: this.id, auth_id: this.auth_id })
+        )
+        .then(res => {
+          this.$Message.info("操作成功！");
+          this.first();
+        })
+        .catch(err => {});
+    },
+    cancel() {},
+    copy() {
+      let Text_input = document.querySelector(".ivu-input");
+      Text_input.select(); // 选择对象
+      document.execCommand("Copy"); // 执行浏览器复制命令
+    },
+    close() {
+      this.ShowCode5 = true;
+      this.ShowCode4 = false;
+      this.productPackageId = "";
+      // this.first();
+      this.Newpackage();
+      this.$emit("close", false);
+    },
+    success(text) {
+      this.$Message.success(text);
+    },
+    error(text) {
+      this.$Message.error(text);
+    }
+  },
+  components: {
+    Qrcode,
+    Calendar
+  },
+  mounted() {
+    // this.auth_id = this.$route.params.id;
+  },
+  updated() {},
+};
+
+</script>
+
+<style scoped lang="scss">
+.form_label {
+  width: 72px !important;
+}
+
+.commission {
+  display: inline-block;
+  width: 25%;
+  height: 100%;
+}
+.SetMeal {
+  min-height: 600px;
+  padding: 0 10px;
+  overflow: auto;
+  > p {
+    height: 30px;
+    line-height: 30px;
+  }
+}
+
+.SetForm {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  > div {
+    flex: 1;
+    padding-right: 8px;
+    // z-index: 13000;
+    > label {
+      display: inline-block;
+      width: 95px;
+      height: 100%;
+    }
+  }
+}
+.SetForm1{
+  >div{
+      z-index: 13000;
+  }
+}
+.ivu-select-dropdown{
+  z-index: 13005;
+}
+.SetForm2{
+  >div{
+    z-index: 13002;
+
+  }
+}
+.InputList {
+  display: flex;
+  background: #ffffff;
+  div {
+    flex: 1;
+    margin: 4px 0;
+    // z-index: 13003;
+    label {
+      display: inline-block;
+      width: 72px;
+      text-align: left;
+      // padding-right: 20px;
+    }
+  }
+}
+.InputList1 {
+  div {
+    z-index: 12008;
+    }
+}
+.InputList3{
+  display: flex;
+  div{
+    flex: 1;
+    margin: 4px 0;
+    label{
+      display: inline-block;
+    }
+  }
+}
+.ivu-select-dropdown{
+  z-index: 100;
+}
+.Menu {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: 450px;
+  margin-top: -5%;
+  > p {
+    padding: 0 80px 0 20px;
+    height: 42px;
+    line-height: 42px;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+    color: #333;
+    overflow: hidden;
+    background-color: #f8f8f8;
+    border-radius: 2px 2px 0 0;
+    border: 1px solid #bbb;
+    border-bottom: none;
+    position: relative;
+    button {
+      position: absolute;
+      right: 10px;
+      border: none;
+      background: #f8f8f8;
+      width: 40px;
+      cursor: pointer;
+      outline: none;
+    }
+  }
+  > div {
+    width: 100%;
+    height: calc(100% - 42px);
+    border: 1px solid #bbb;
+    border-top: none;
+    background: #fff;
+  }
+}
+
+.width70 {
+  width: 70%;
+}
+
+.price{
+  padding: 10px 0;
+}
+
+</style>
+

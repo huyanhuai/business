@@ -1,0 +1,560 @@
+<template lang="pug">
+    div(style="background:#fff")   
+        
+        .topimg
+            img(src="../../assets/login/logoto.png")
+        Form(
+            ref="formCustom"
+            style="width:600px;margin:0 auto;margin-top:14px"
+            :rules="ruleCustom"
+            :model="Review" 
+            label-position="left" 
+            :label-width="120") 
+            FormItem(label="企业名称:" prop="enterpriseName")
+                Input(v-model='Review.enterpriseName' placeholder="请输入企业名称")
+            FormItem(label="企业简称:" prop="shortName")
+                Input(v-model='Review.shortName'  placeholder="请输入企业简称")                
+            FormItem(label="统一社会信用代码:" prop="socialCreditCode")
+                Input(v-model='Review.socialCreditCode'  placeholder="请输入统一社会信用代码")
+            FormItem(label="注册资金(万元):" prop="registeredAssets")
+                InputNumber(v-model='Review.registeredAssets' style="width:100%"  placeholder="请输入注册资金")
+            FormItem(label="法人姓名:" prop="legalRepresentativeName")
+                Input(v-model='Review.legalRepresentativeName'  placeholder="请输入法人姓名")       
+            FormItem(label="法人联系方式:" prop="legalRepresentativeMobile")
+                InputNumber(v-model='Review.legalRepresentativeMobile' style="width:100%"  placeholder="请输入法人手机号")
+            FormItem(label="法人证件号码:" prop="identityCard")
+                Input(v-model='Review.identityCard'  placeholder="请输入法人证件号码")  
+            FormItem(label="银行:" prop="savings")
+                Input(v-model='Review.savings'  placeholder="请输入银行名称")  
+            FormItem(label="支行" prop="subbr")     
+                Input(v-model='Review.subbr'  placeholder="请输入支行")  
+            FormItem(label="开户行账号:" prop="bankAccount")
+                Input(v-model='Review.bankAccount'  placeholder="请输入开户行账号")
+            FormItem(label="成立时间:" prop="establishmentDate")
+                DatePicker( type="date" placeholder="请输入成立时间" :clearable="false" v-model='Review.establishmentDate' style="width:100%")
+            FormItem(label="商家logo")    
+              div
+                Upload(
+                  :before-upload="handleUpload"
+                  :show-upload-list="false"
+                  action="//jsonplaceholder.typicode.com/posts/"
+                ) 
+                  img(:src="LogoImg" style="width:150px;height:150px;margin-left:5px;")
+            FormItem(label="证件")
+            .imglist
+                Upload(
+                    :before-upload="handleUploadidentityCardFrontImg"
+                    :on-success="uploadSuccess"
+                    action="//jsonplaceholder.typicode.com/posts/")
+                    h3 身份证正面
+                    img(:src="ListidentityCardFrontImg")
+                    
+                Upload(
+                    :on-success="uploadSuccess"
+                    :before-upload="handleUploadidentityCardReverseImg"
+                    action="//jsonplaceholder.typicode.com/posts/")
+                    h3 身份证反面
+                    img(:src="ListidentityCardReverseImg")
+                    
+                Upload(
+                    :on-success="uploadSuccess"
+                    :before-upload="handleUploadtravelAgencyLicenceImg"
+                    action="//jsonplaceholder.typicode.com/posts/")
+                    h3 旅行社营业许可证
+                    img(:src="ListtravelAgencyLicenceImg")
+                    
+                Upload(
+                    ref="upload"
+                    :on-success="uploadSuccess"
+                    :before-upload="handleUploadbusinessLicenseImg"
+                    action="//jsonplaceholder.typicode.com/posts/")
+                    h3 营业执照
+                    img(:src="ListbusinessLicenseImg")
+        
+            FormItem(label="联系人:" prop="corporateContactsName")
+                Input(v-model='Review.corporateContactsName'  placeholder="请输入联系人")       
+            FormItem(label="联系人电话:" prop="corporateContactsMobile")
+                InputNumber(v-model='Review.corporateContactsMobile' style="width:100%" placeholder="请输入联系人电话")
+            FormItem(label="商家地址:" prop="specificAddress")
+                Input(v-model='Review.specificAddress'  placeholder="请输入商家地址")
+            div(style="padding-bottom:40px;")
+                Button(type="success" @click="Submitdata" long) 提交   
+            Spin(size="large" fix v-if="spinShow")                             
+</template>
+<script>
+import { getDate, add0 } from "../../js/public.js";
+export default {
+  data() {
+    const validate = (rule, value, callback) => {
+        if (value === '') {
+            callback(new Error('不能为空'));
+        } else {
+            callback();
+        }
+    };
+    return {
+      spinShow: true,
+      file: null,
+      LogoImg: require("../../assets/Home/a11.png"),
+      imglist1: "",
+      imglist2: "",
+      imglist3: "",
+      imglist4: "",
+      loadingStatus: false,
+      ListidentityCardFrontImg: require("../../assets/Home/a11.png"),
+        // "http://o2o.tongyoutrip.com/P3-Web/content/tyms/vm/img/zheng.png",
+      ListidentityCardReverseImg: require("../../assets/Home/a11.png"),
+        // "http://o2o.tongyoutrip.com/P3-Web/content/tyms/vm/img/fan.png",
+      ListtravelAgencyLicenceImg: require("../../assets/Home/a11.png"),
+        // "http://o2o.tongyoutrip.com/P3-Web/content/tyms/vm/img/yiye.png",
+      ListbusinessLicenseImg: require("../../assets/Home/a11.png"),
+        // "http://o2o.tongyoutrip.com/P3-Web/content/tyms/vm/img/hetong.jpeg",
+      uploadList: [],
+      headImg: "",
+      Review: {
+        enterpriseName: "",
+        shortName: "",
+        registeredAssets: 0,
+        legalRepresentativeName: "",
+        legalRepresentativeMobile: null,
+        identityCard: "",
+        savings: "",
+        subbr: "",
+        bankAccount: "",
+        establishmentDate: "",
+        specificAddress: "",
+        corporateContactsName: "",
+        corporateContactsMobile: null,
+        socialCreditCode: "",
+        // headImg: "",
+        identityCardFrontImgurl: null,
+        identityCardReverseImgurl: null,
+        travelAgencyLicenceImgurl: null,
+        businessLicenseImgurl: null
+      },
+      ruleCustom: {
+        enterpriseName: [{validator: validate, trigger: 'blur'}],
+        shortName: [{validator: validate, trigger: 'blur'}],
+        registeredAssets: [{validator: validate, trigger: 'blur'}],
+        legalRepresentativeName: [{validator: validate, trigger: 'blur'}],
+        legalRepresentativeMobile: [{validator: validate, trigger: 'blur'}],
+        identityCard: [{validator: validate, trigger: 'blur'}],
+        savings: [{validator: validate, trigger: 'blur'}],
+        subbr: [{validator: validate, trigger: 'blur'}],
+        bankAccount: [{validator: validate, trigger: 'blur'}],
+        establishmentDate: [{validator: validate, trigger: 'blur'}],
+        specificAddress: [{validator: validate, trigger: 'blur'}],
+        corporateContactsName: [{validator: validate, trigger: 'blur'}],
+        corporateContactsMobile: [{validator: validate, trigger: 'blur'}],
+        socialCreditCode: [{validator: validate, trigger: 'blur'}],
+      },
+    };
+  },
+  methods: {
+    handleUpload(file) {
+      var reader = new FileReader();
+      var _this = this;
+      let data = new FormData();
+      let config = {
+      headers: {
+        token: this.$route.query.data
+      }
+      };
+      data.append("head_img", file);
+      this.axios
+        .post(`${this.AjaxUrl}/ty_business/business/user/uploadHeadImg`, data,config)
+        .then(res => {
+          if (res.errorCode == 200) {
+            this.headImg = res.data;
+          }else{
+            this.error(res.message);
+          }
+        })
+        .catch(err => {});
+
+      reader.readAsDataURL(file);
+      reader.onload = function(e) {
+        _this.LogoImg = this.result;
+      };
+    },
+    handleUploadidentityCardFrontImg(file) {
+      // this.Review.identityCardFrontImgurl = file;
+      // console.log(this.Review.identityCardFrontImgurl);
+      let config = {
+      headers: {
+        token: this.$route.query.data
+      }
+      };
+      var reader = new FileReader();
+      var _this = this;
+      let data = new FormData();
+      data.append("file", file);
+      this.axios
+        .post(`${this.AjaxUrl}/ty_business/upload`, data,config)
+        .then(res => {
+          if (res.errorCode == 200) {
+            this.imglist1 = res.data;
+            this.Review.identityCardFrontImgurl = this.imglist1;
+          }else{
+            this.error(res.message)
+          }
+          console.log(res);
+        })
+        .catch(err => {});
+
+      reader.readAsDataURL(file);
+      reader.onload = function(e) {
+        _this.ListidentityCardFrontImg = this.result;
+      };
+      //this.imglist[0].url = this.AvatarUrl;
+      return false;
+    },
+    smallImg(index) {
+      return this.ListidentityCardFrontImg;
+      // return this.imglist[index].url + "_small.jpg";
+    },
+    handleUploadidentityCardReverseImg(file) {
+      // this.Review.identityCardReverseImgurl = file;
+      let config = {
+      headers: {
+        token: this.$route.query.data
+      }
+      };
+      
+      var reader = new FileReader();
+      var _this = this;
+      let data = new FormData();
+      data.append("file", file);
+      this.axios
+        .post(`${this.AjaxUrl}/ty_business/upload`, data,config)
+        .then(res => {
+          if (res.errorCode == 200) {
+            this.imglist2 = res.data;
+            this.Review.identityCardReverseImgurl = this.imglist2;
+          }else{
+            this.error(res.message);
+          }
+          console.log(res);
+        })
+        .catch(err => {});
+      reader.readAsDataURL(file);
+      reader.onload = function(e) {
+        _this.ListidentityCardReverseImg = this.result;
+      };
+      return false;
+    },
+    handleUploadtravelAgencyLicenceImg(file) {
+      // this.Review.travelAgencyLicenceImgurl = file;
+      let config = {
+      headers: {
+        token: this.$route.query.data
+      }
+      };
+      var reader = new FileReader();
+      var _this = this;
+      let data = new FormData();
+      data.append("file", file);
+      this.axios
+        .post(`${this.AjaxUrl}/ty_business/upload`, data,config)
+        .then(res => {
+          if (res.errorCode == 200) {
+            this.imglist3 = res.data;
+            this.Review.travelAgencyLicenceImgurl = this.imglist3;
+          }else{
+            this.error(res.message)
+          }
+          console.log(res);
+        })
+        .catch(err => {});
+      reader.readAsDataURL(file);
+      reader.onload = function(e) {
+        _this.ListtravelAgencyLicenceImg = this.result;
+      };
+      return false;
+    },
+    handleUploadbusinessLicenseImg(file) {
+      // this.Review.businessLicenseImgurl = file;
+      let config = {
+      headers: {
+        token: this.$route.query.data
+      }
+      };
+      var reader = new FileReader();
+      var _this = this;
+      let data = new FormData();
+      data.append("file", file);
+      this.axios
+        .post(`${this.AjaxUrl}/ty_business/upload`, data,config)
+        .then(res => {
+          if (res.errorCode == 200) {
+            console.log(res.data);
+            this.imglist4 = res.data;
+            this.Review.businessLicenseImgurl = this.imglist4;
+          }else{
+            this.error(res.message);
+          }
+          console.log(res);
+        })
+        .catch(err => {});
+      reader.readAsDataURL(file);
+      reader.onload = function(e) {
+        _this.ListbusinessLicenseImg = this.result;
+      };
+      return false;
+    },
+    upload() {
+      this.loadingStatus = true;
+      setTimeout(() => {
+        this.file = null;
+        this.loadingStatus = false;
+        this.$Message.success("Success");
+      }, 1500);
+    
+    },
+    uploadSuccess (res,file,) { // 文件上传回调 上传成功后删除待上传文件
+      console.log(res);
+      console.log(file);
+    },
+    Submitdata() {
+      console.log(this.Review);
+      this.$refs.formCustom.validate((valid) => {
+          if (valid) {
+              // this.$Message.success('Success!');
+          } else {
+              // this.$Message.error('Fail!');
+          }
+      })
+      let enterpriseNamereg = /^[\u4e00-\u9fa5]+$/;
+      if (!enterpriseNamereg.test(this.Review.enterpriseName)) {
+        this.error("企业名称(必须是纯汉字)！");
+        return false;
+      }
+      if(this.Review.shortName == "" || this.Review.shortName == null){
+        this.error("企业简称不能为空！");
+        return false;
+      }
+      let socialCreditCodestr = /^[A-Za-z0-9]{1,40}$/;
+      if (!socialCreditCodestr.test(this.Review.socialCreditCode)) {
+        this.error("统一社会信用代码输入不正确！");
+        return false;
+      }
+      if (this.Review.legalRepresentativeName == "" || this.Review.legalRepresentativeName == null) {
+        this.error("法人姓名不能为空！");
+        return false;
+      }
+
+      if (this.Review.legalRepresentativeName.length >= 32) {
+        this.error("法人姓名过长！");
+        return false;
+      }
+      var phom = /^1[3|4|5|7|8][0-9]\d{4,8}$/;
+      if (!phom.test(this.Review.legalRepresentativeMobile)) {
+        this.error("法人联系方式输入不正确！");
+        return false;
+      }
+      var reg = /^([1-9]{1})(\d{14}|\d{18}|\d{15}|\d{16}|\d{17})$/;
+
+      // if (!reg.test(Number(this.Review.bankAccount))) {
+      //   this.error("开户行账号输入有误！");
+      //   return false;
+      // }
+
+      var nationalIdentityNumberStr = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
+      if (!nationalIdentityNumberStr.test(this.Review.identityCard)) {
+        this.error("法人身份证号码输入有误,请重新输入！");
+        return false;
+      }
+
+      if (this.Review.bankAccount == "" || this.Review.bankAccount == null) {
+        this.error("开户行账号不能为空！");
+        return false;
+      }
+      console.log(this.Review.establishmentDate);
+      if(this.Review.establishmentDate != null || this.Review.establishmentDate != ""){
+        this.Review.establishmentDate = getDate(this.Review.establishmentDate);
+      }else{
+        this.error("请输入成立时间！");
+        return false;
+      }
+      console.log(this.Review.establishmentDate);
+      if(this.Review.identityCardFrontImgurl == null) {
+        this.error("请上传身份证正面图片!");
+        return false;
+      }
+      if(this.Review.identityCardReverseImgurl == null) {
+        this.error("请上传身份证反面图片!");
+        return false;
+      }
+      if(this.Review.travelAgencyLicenceImgurl == null) {
+        this.error("请上传营业许可证图片!");
+        return false;
+      }
+      if(this.Review.businessLicenseImgurl == null) {
+        this.error("请上传营业执照图片!");
+        return false;
+      }
+      // if (
+      //   this.Review.identityCardFrontImgurl == null ||
+      //   this.Review.travelAgencyLicenceImgurl == null ||
+      //   this.Review.identityCardReverseImgurl == null ||
+      //   this.Review.businessLicenseImgurl == null
+      // ) {
+      //   this.error("请上传图片!");
+      //   return false;
+      // }
+      console.log(this.Review.identityCardFrontImgurl);
+      
+      if (this.Review.corporateContactsName == "" || this.Review.corporateContactsName == null) {
+        this.error("联系人不能为空");
+        return false;
+      }
+      if(this.Review.corporateContactsName != "" && this.Review.corporateContactsName.length > 32) {
+        this.error("联系人过长,请在32个长度以内");
+        return false;
+      }
+
+      if (!phom.test(this.Review.corporateContactsMobile)) {
+        this.error("联系人电话输入有误,请重新输入！");
+        return false;
+      }
+
+      if (this.Review.specificAddress == "" || this.Review.specificAddress == null) {
+        this.error("商家地址不能为空");
+        return false;
+      }
+      if (this.Review.specificAddress != "" && this.Review.specificAddress.length > 32) {
+        this.error("商家地址过长,请在32个长度以内");
+        return false;
+      }
+
+      for (let key in this.Review) {
+        if (this.Review[key] == "" || this.Review[key] == null) {
+          this.error("所有字段都是必填的");
+          return false;
+        }
+      }
+      let data = new FormData();
+      
+      for (let key in this.Review) {
+        data.append(key, this.Review[key]);
+      }
+      // data.travelAgencyLicenceImgurl = this.imglist3;
+      // data.businessLicenseImgurl = this.imglist4;
+      // data.identityCardFrontImgurl = this.imglist1;
+      // data.identityCardReverseImgurl = this.imglist2;
+      console.log(data.get("establishmentDate"));
+      let config = {
+        headers: {
+          token: this.$route.query.data
+        }
+      };
+      this.spinShow = true;
+      this.axios
+        .post(
+          `${this.AjaxUrl}/ty_business/business/user/info/submit`,
+          data,
+          config
+        )
+        .then(res => {
+          console.log(res);
+          let code = res.errorCode;
+          if (code == 200) {
+            this.$Message.success('操作成功!');
+            this.$router.push({
+              name: "audit",
+            });
+          } else {
+            this.error(res.message);
+          }
+          this.spinShow = false;
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+    error(text) {
+      this.$Message.error(text);
+    }
+  },
+  mounted() {
+    let config = {
+      headers: {
+        token: this.$route.query.data
+      }
+    };
+    this.axios
+      .post(
+        `${this.AjaxUrl}/ty_business/business/user/info/getDetail`,
+        '',
+        config
+      )
+      .then(res => {
+        console.log(res);
+        if (res.errorCode == 200) {
+          let data = res.data;
+          this.spinShow = false;
+          for (let key in data) {
+            if(this.Review[key]!=undefined){
+                this.Review[key]=data[key]
+            }
+            // console.log(this.Review);
+          }
+          this.Review.legalRepresentativeMobile = Number(data.legalRepresentativeMobile);
+          this.Review.corporateContactsMobile = Number(data.corporateContactsMobile);
+
+          this.Review.establishmentDate = getDate(data.establishmentDate);
+          console.log(this.Review.establishmentDate);
+          this.Review.identityCardFrontImgurl=data.identityCardFrontImgurl;
+          this.Review.businessLicenseImgurl=data.businessLicenseImgurl;
+          this.Review.travelAgencyLicenceImgurl=data.travelAgencyLicenceImgurl;
+          this.Review.identityCardReverseImgurl=data.identityCardReverseImgurl;
+          
+         if(data.identityCardFrontImgurl != null && data.identityCardFrontImgurl != ""){
+          this.ListidentityCardFrontImg=this.ImgUrl+data.identityCardFrontImgurl+'.jpg';
+          this.ListbusinessLicenseImg=this.ImgUrl+data.businessLicenseImgurl+'.jpg';
+          this.ListtravelAgencyLicenceImg=this.ImgUrl+data.travelAgencyLicenceImgurl+'.jpg';
+          this.ListidentityCardReverseImg=this.ImgUrl+data.identityCardReverseImgurl+'.jpg';
+         }else{
+
+         }
+         if(data.headImg != null && data.headImg != ""){
+           this.LogoImg = this.ImgUrl + data.headImg + '.jpg';
+         }else {}
+          //console.log(this.Review);
+        }else{
+          this.error(res.message);
+          this.spinShow = false;
+        }
+      })
+      .catch(err => {
+        console.log(err);
+        this.spinShow = false;
+      });
+  }
+};
+</script>
+
+<style lang="scss" scoped >
+.topimg {
+  width: 100%;
+  height: 70px;
+  text-align: center;
+  padding-top: 10px;
+  border-bottom: 1px solid #eee;
+}
+.imglist {
+  display: flex;
+  div {
+    flex: 1;
+    padding: 0 4px;
+    img {
+      width: 100%;
+      height: 80px;
+    }
+  }
+}
+.AccountBank {
+  display: flex;
+}
+</style>
+

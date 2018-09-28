@@ -1,0 +1,558 @@
+<template>
+  <div  class="Box_list">     
+         <div  v-for="(list,index) of DataList"  :key="index"  style="width:49%; display:inline-block;margin-bottom:8px;">
+            <div class="Commoditylist">
+             <div >
+             <p  v-if="list.status==1" :style="{ backgroundImage:`url( ${linkImg[0].src })` }" >
+             {{list.hotelName}} 
+             <span class="Bj_R"  @click="Editpackage(index)" >
+               <img src="../../assets/Commodity/bianji.png" alt="" style="float: left;margin-top:8px;">
+             </span>
+             </p> 
+             <p v-else :style="{ backgroundImage:`url( ${linkImg[1].src })` }" >
+              {{list.hotelName}}
+              <span class="Bj_R" @click="Editpackage(index)" >
+                <img src="../../assets/Commodity/bianji.png" alt="" style="float: left;margin-top:8px;">
+              </span>
+             </p>        
+             <div class="CommodityBody">
+                 <div>
+                     <p >酒店编码</p> 
+                     <p>{{list.hotelCode}}</p>
+                 </div>
+                 <div>
+                 </div>
+                 <div class="CommImg">
+                     <img v-bind:src="pictureUrlSrc(list.pictureUrl)" alt="">
+                 </div>
+                 <div class="CommodityBottom1">
+                      <p>酒店地址：</p>
+                      <p :title="list.address">{{list.address}}</p>
+                 </div>
+             </div>
+             </div>
+             <hotelRightList  :mark="index"  @Form="chang" :status="list.status" />
+            <Spin size="large" fix v-if="spinShow"></Spin>
+            </div>
+         </div>
+         <div style="clear:both"></div>
+         <div style="display: flex;width:100%;">
+            <div class="code" style="flex:1">
+              <Button type="info" size="large" @click="Generatemothercode" style="background-color: rgb(82, 192, 199);">生成母码</Button>
+            </div>
+            <div style="text-align:right;flex:1;">
+                <Page  :total="pageSize"  :current.sync="page"  :pageSize="Size"  show-elevator></Page>
+            </div>  
+         </div>
+
+         <!-- <div style="margin-top:10px;text-align:right;width:100%">
+            <Page  :total="pageSize"  :current.sync="page"  :pageSize="Size"  show-elevator></Page>
+         </div>   
+         <div class="code">
+            <Button type="info" size="large" @click="Generatemothercode" style="background-color: rgb(82, 192, 199);">生成母码</Button>
+         </div> -->
+
+          <Modal
+              v-model="modal1"
+              title="生成母码"
+              @on-ok="ok1"
+              @on-cancel="cancel">
+              <qrcode-vue 
+                size="200" 
+                :value="qrText" 
+                :bgColor="bgColor" 
+                :fgColor="fgColor"
+                style="text-align:center;"
+              ></qrcode-vue>
+              <!-- <Qrcode  style="text-align:center;" :size="200"  :cls="qrCls" :value="qrText"></Qrcode> -->
+          </Modal>     
+        <!-- 套餐 -->
+          <div v-show="Listshow" style="position: fixed;overflow: auto;top: 0;right: 0;bottom: 0;width:100%;height:100%;background: rgba(0,0,0,.5);z-index:90;">
+            <transition  enter-active-class="animated zoomInLeft" leave-active-class="animated zoomOutRight">
+              <hotelPackage  @Shutdown="changer" v-show="Listshow"  @close="close"   :TypeList="TypeList" ></hotelPackage>
+            </transition>
+          </div>
+        <!-- 酒店详情 -->
+          <div v-show="packageShow" style="position: fixed;overflow: auto;top: 0;right: 0;bottom: 0;width:100%;height:100%;background: rgba(0,0,0,.5);z-index:90;">
+            <transition  enter-active-class="animated zoomInLeft" leave-active-class="animated zoomOutRight">
+              <hotelDetails  v-show="packageShow"  :hotelId="productIdList" :series="series"  @closechang="closechang"></hotelDetails>
+            </transition>
+          </div>
+          <!-- 上下架 删除   -->
+          <Modal
+            v-model="modelIndex"
+            :title="ModelTitle"
+            @on-ok="ok"
+            @on-cancel="cancel">
+            <p>{{ModalText}}</p>
+          </Modal>
+          <!-- 海报弹框 -->
+          <Modal
+            v-model="poster"
+            :title="ModelTitle"
+            @on-cancel="cancel">
+            <p style="text-align: center;">
+              <Upload
+                  :before-upload="handleUpload"
+                  :show-upload-list="false"
+                  action="//jsonplaceholder.typicode.com/posts/"> 
+                  <img :src="PictureImg" style="width:180px;height:225px;">
+              </Upload>
+            </p>
+            <div slot="footer">
+              <Button type="text" size="large" @click="addCancel">取消</Button>
+              <Button type="primary" size="large" :loading="addLoading"  @click="addPoster">确认</Button>
+            </div>
+          </Modal>
+  </div>
+</template>
+
+<script>
+import hotelRightList from "../hotel/hotelRightList";
+import hotelPackage from "./hotelPackage";
+import MenuList from "../../components/Commoditylist/MenuList";
+import hotelDetails from "./hotelDetails";
+import Qrcode from "v-qrcode";
+import QrcodeVue from 'qrcode.vue';
+import "animate.css";
+
+export default {
+  props: {
+    DataList: [Array, Object, JSON],
+    pageSize: Number,
+    numbers: Number,
+  },
+  data() {
+    return {
+      size: 200,
+      bgColor: '#000',
+      fgColor: '#000',
+      businessUserId: "",
+      operatingState: null,
+      modal1: false,
+      qrCls: "qrcode",
+      qrText: "",
+      spinShow: false,
+      editorContent: "",
+      Title: "商品信息",
+      // DataList: [],
+      // pageSize: 0,
+      pageNum: 1,
+      auth_id: "",
+      productIdList: 0,
+      hotelId: "",
+      productName: "",
+      packageShow: false,
+      modelIndex: false,
+      poster: false,
+      addLoading: false,
+      PictureImg: require("../../assets/Home/a11.png"),
+      imglist: "",
+      ModelTitle: "警告",
+      ModalText: "",
+      linkImg: [
+        { src: require("../../assets/Commodity/shangjia.png") },
+        { src: require("../../assets/Commodity/xiajia.png") }
+      ],
+      page: 1,
+      Size: 4,
+      Listshow: false,
+      TypeList: [],
+      id: "",
+      series: 0
+    };
+  },
+  computed: {},
+  watch: {
+    page() {
+      this.$emit("Page", { page: this.page, break: true });
+    },
+    num() {
+      this.page = this.numbers;
+    }
+  },
+
+  methods: {
+    changer(res){
+        this.Listshow = false;
+    },
+    closechang(res) {
+      if (res) {
+        this.packageShow = false;
+      }
+    },
+    close(res) {
+      this.Listshow = res;
+    },
+    success(text) {
+      this.$Message.success(text);
+    },
+    pictureUrlSrc(Src) {
+      return this.ImgUrl + Src + "_small.jpg";
+    },
+    chang(res) {
+      let hotelId = this.DataList[res[0]].hotelId;
+      this.TypeList = [];
+      let title = "";
+      let type;
+      var status = res[1];
+      console.log(res[1]);
+      if (status == 1) {
+        title = "查看二维码";
+        let { productUrl } = this.DataList[res[0]];
+        type = 1;
+        this.TypeList.push({ title, productUrl, type, hotelId });
+        this.Listshow = true;
+      } else if (status == 2) {
+        console.log(status);
+        title = "新增套餐";
+        type = 2;
+        this.TypeList.push({ title, hotelId, type });
+        this.Listshow = true;
+      }else if (status == 3) {
+        console.log(status);
+        title = "房间";
+        type = 3;
+        this.TypeList.push({ title, hotelId, type });
+        this.Listshow = true;
+      }  else if (status == 6) {
+        console.log(status);
+        title = "定佣金";
+        type = 6;
+        this.TypeList.push({ title, hotelId, type });
+        this.Listshow = true;
+        // this.TypeList.push({ title, type });
+        // this.hotelId = hotelId;
+        // this.ModelTitle = "添加图片（比例：6 : 7.5）";
+        // this.getList();
+        // this.poster = true;
+        // this.addLoading = false;
+      } else if (status == 4) {
+        console.log(status);
+        this.TypeList.push({ title, type });
+        this.hotelId = hotelId;
+        let { status } = this.DataList[res[0]];
+        this.ModelTitle = "上下架";
+        this.operatingState = status;
+        this.ModalText =
+          status == 1 ? "确认下架该商品吗?" : "确认上架该商品吗?";
+        this.modelIndex = true;
+      }else {
+        console.log(status);
+        this.TypeList.push({ title, type });
+        this.hotelId = hotelId;
+        this.ModelTitle = "删除商品";
+        this.ModalText = "确认删除该商品吗";
+        this.modelIndex = true;
+      } 
+    },
+    Editpackage(index) {
+      this.packageShow = true;
+      this.productIdList = this.DataList[index].hotelId;
+      this.series++;
+      console.log(this.productIdList);
+    },
+    ok1() {},
+
+    //删除商品
+    ok() {
+      let url = "";
+      let data = {};
+      data.hotelId = this.hotelId;
+      if (this.ModalText == "确认删除该商品吗") {
+        url = `${this.AjaxUrl}/ty_business/hotel/delete`;
+      } else if(this.operatingState == 0){
+        url = `${this.AjaxUrl}/ty_business/hotel/open`;
+      }else if(this.operatingState == 1){
+        url = `${this.AjaxUrl}/ty_business/hotel/close`;
+      }
+      this.axios
+        .post(url, this.qs.stringify(data))
+        .then(res => {
+          this.success(res.message);
+          if (this.ModalText == "确认删除该商品吗") {
+            this.$emit("Page", { page: this.page, break: false });
+          } else {
+            this.$emit("Page", { break: true });
+          }
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+
+    //产品详情
+    getList() {
+       this.axios
+        .get(`${this.AjaxUrl}/ty_business/product/getDetail`, {
+          params: {
+            productId: this.productId
+          }
+        })
+        .then(res => {
+          if(res.errorCode == 200){
+            console.log(res.data.coverImg);
+            if(res.data.coverImg == null || res.data.coverImg == ""){
+              this.PictureImg = require("../../assets/Home/a11.png");
+            }else {
+              this.PictureImg = this.ImgUrl + res.data.coverImg + '.jpg';
+              this.imglist = res.data.coverImg;
+            }
+            
+          }else{
+            this.$Message.error(res.message);
+          }
+          
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+    addCancel() {
+      this.poster = false;
+    },
+    //海报弹框
+    addPoster() {
+        let data = {};
+        data.productId = this.productId;
+        data.coverImg = this.imglist;
+        data.auth_id = this.auth_id;
+        this.addLoading = true;
+        this.axios
+          .post(
+            `${this.AjaxUrl}/ty_business/product/update`,
+            this.qs.stringify(data)
+          )
+          .then(res => {
+            if (res.errorCode == 200) {
+              this.success(res.message);
+              this.imglist = "";
+              this.poster = false;
+            }else{
+              this.addLoading = false;
+              this.$Message.error(res.message);
+            }
+          })
+          .catch(err => {})  
+    },
+    //上传海报图片
+    handleUpload(file) {
+      var reader = new FileReader();
+      var _this = this;
+      let data = new FormData();
+      data.append("file", file);
+      this.axios
+        .post(`${this.AjaxUrl}/ty_business/upload`, data)
+        .then(res => {
+          if (res.errorCode == 200) {
+            this.imglist = res.data;
+          }else{
+            this.$Message.error("图片上传错误")
+          }
+        })
+        .catch(err => {});
+
+      reader.readAsDataURL(file);
+      reader.onload = function(e) {
+        _this.PictureImg = this.result;
+      };
+      return false;
+    },
+    cancel() {},
+    Generatemothercode() {
+      
+      const config = getCookie('token');
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/business/user/getMasterCode`, {})
+        .then(res => {
+          if (res.errorCode == 200) {
+            this.qrText = res.data.info.url;
+            this.modal1 = true;
+          }else{
+            this.$Message.error(res.message);
+          }
+        });
+    },
+  },
+  mounted() {
+    this.page = this.numbers;
+  },
+  components: {
+    hotelRightList,
+    MenuList,
+    hotelPackage,
+    hotelDetails,
+    Qrcode,
+    QrcodeVue,
+  }
+};
+</script>
+
+<style  lang="scss">
+.CommodityTop{
+  overflow: hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+}
+.ivu-select-dropdown{
+  z-index: 13005;
+}
+.code{
+  margin-bottom: 8px;
+}
+.code button{
+  margin: 10px 0 0 20px;
+}
+.w-e-text-container{
+  height: 350px !important;
+}
+.w-e-text img{
+    width: 250px !important;
+    height: 180px !important;   		
+}
+.Bj_R {
+  float: right;
+  line-height: 30px;
+  width: 30px;
+  cursor: pointer;
+}
+
+.p_p {
+  width: 300px;
+  height: 300px;
+  background: red;
+}
+
+.Box_list > div {
+  margin-right: 1%;
+}
+.Box_list > div:nth-child(2) {
+  float: right;
+}
+// .Box_list > div:nth-child(2):after{display:block;clear:both;content:"";visibility:hidden;height:0} 
+.Box_list > div:nth-child(4) {
+  float: right;
+}
+.Rigth_btn {
+  width: 20% !important;
+  border-top: 1px solid #eee !important;
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  p {
+    height: 40px;
+    line-height: 40px;
+    border-bottom: 1px solid #eeeeee;
+    border-right: 1px solid #eeeeee;
+    cursor: pointer;
+    background: #52c0c7;
+    color: #fff;
+    img {
+      float: left;
+      margin-top: 10px;
+      margin-left: 10px;
+      margin-right: 10px;
+      width: 18px;
+      height: 18px;
+    }
+  }
+}
+.mar8 {
+  margin: 8px 0px;
+  text-indent: 24px;
+}
+.CommodityBottom1 {
+  p:nth-child(1) {
+    width: 20%;
+    padding-left: 24px;
+    display: inline-block;
+    overflow: hidden;/*超出部分隐藏*/
+    white-space: nowrap;/*不换行*/
+    text-overflow:ellipsis;/*超出部分文字以...显示*/
+  }
+  p:nth-child(2) {
+    width: 70%;
+    max-width: 420px;
+    overflow: hidden;/*超出部分隐藏*/
+    white-space: nowrap;/*不换行*/
+    text-overflow:ellipsis;/*超出部分文字以...显示*/
+    // padding-right: 10px;
+    display: inline-block;
+    // text-align: right;
+  }
+}
+.Commoditylist {
+  width: 100%;
+  display: inline-block;
+  position: relative;
+  > div:nth-child(1) {
+    display: inline-block;
+    width: 80%;
+    border: 1px solid #eee;
+    > p:nth-child(1) {
+      background-repeat: no-repeat;
+      text-indent: 24px;
+      font-size: 16px;
+      height: 30px;
+      line-height: 30px;
+      background-position-y: 5px;
+      border-bottom: 1px solid #eee;
+    }
+  }
+}
+
+.atrlist {
+  background: #fff !important;
+  color: #000 !important;
+}
+
+.CommodityBody {
+  > div {
+    > p {
+      margin: 8px 0px;
+    }
+    p:nth-child(2) {
+      color: #a4a4a4;
+    }
+  }
+  > div:nth-child(1) {
+    width: 60%;
+    padding-left: 24px;
+    display: inline-block;
+  }
+  > div:nth-child(2) {
+    width: 39%;
+    padding-right: 10px;
+    text-align: right;
+    display: inline-block;
+  }
+}
+
+.CommImg {
+  height: 140px;
+  img {
+    min-width: 53%;
+    min-height: 140px;
+    width: 140px;
+    height: 140px;
+    margin-left: 24px;
+  }
+}
+
+.InputList {
+  display: flex;
+  background: #ffffff;
+  div {
+    flex: 1;
+    margin: 4px 0;
+    label {
+      display: inline-block;
+      width: 24%;
+      text-align: right;
+      // padding-right: 20px;
+    }
+  }
+}
+
+
+</style>

@@ -1,0 +1,79 @@
+@import '~iview/src/styles/index.less';
+
+.ivu-layout-sider,
+.ivu-menu-dark {
+  background: rgb(82, 192, 199);
+  z-index:1 ;
+}
+.ivu-menu-dark.ivu-menu-vertical .ivu-menu-item-active:not(.ivu-menu-submenu),
+.ivu-menu-dark.ivu-menu-vertical
+  .ivu-menu-item-active:not(.ivu-menu-submenu):hover,
+.ivu-menu-dark.ivu-menu-vertical
+  .ivu-menu-submenu-title-active:not(.ivu-menu-submenu),
+.ivu-menu-dark.ivu-menu-vertical
+  .ivu-menu-submenu-title-active:not(.ivu-menu-submenu):hover {
+  background: rgb(82, 192, 199);
+}
+.ivu-menu-dark.ivu-menu-vertical .ivu-menu-item:hover,
+.ivu-menu-dark.ivu-menu-vertical .ivu-menu-submenu-title:hover {
+  background: rgb(82, 192, 199);
+}
+.ivu-menu,
+.ivu-menu-dark.ivu-menu-vertical .ivu-menu-opened .ivu-menu-submenu-title {
+  background: rgb(82, 192, 199);
+}
+.ivu-menu-item,
+.ivu-menu-submenu {
+  border-bottom: 1px solid #fff;
+  color: #fff;
+}
+.ivu-menu-submenu-title {
+  color: #fff !important;
+}
+.menu-item i {
+  margin-right: 8px;
+}
+.ivu-menu-submenu-title :hover {
+  background: rgb(82, 192, 199);
+}
+a:hover {
+  color: #fff;
+}
+.ivu-menu-item-active {
+  background: rgb(60, 115, 129) !important;
+}
+.ivu-menu-dark.ivu-menu-vertical .ivu-menu-submenu .ivu-menu-item-active {
+  background: rgb(60, 115, 129) !important;
+}
+.ivu-menu-dark.ivu-menu-vertical .ivu-menu-submenu .ivu-menu-item-active,
+.ivu-menu-dark.ivu-menu-vertical .ivu-menu-submenu .ivu-menu-item-active:hover {
+  background: rgb(60, 115, 129) !important;
+}
+.ivu-menu-opened > .ivu-menu > .ivu-menu-item {
+  height: 40px;
+  line-height: 40px;
+  padding: 0px;
+  padding-left: 43px;
+}
+.ivu-menu-opened {
+  border-bottom: none;
+}
+a {
+  color: #fff;
+}
+.Spin_div {
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  position: fixed;
+  top: 0px;
+  z-index: 999;
+}
+.Spin {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+}
+#app {
+  border: none;
+}

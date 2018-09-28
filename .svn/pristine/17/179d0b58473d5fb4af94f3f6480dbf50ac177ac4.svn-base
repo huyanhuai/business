@@ -1,0 +1,1706 @@
+<template lang='pug'>
+        div( style="background:#f7f7f7;position: relative;" )
+            p.Title {{Title}}
+                span >
+                span.list {{list}}
+            div(style="margin:0 auto;width:900px" v-show="firstStep")
+                div
+                    img(src="../assets/Home/flow1.png")    
+                .InputList(style="margin-top:30px;") 
+                    div
+                        label 名称
+                        Input( style="width: 70%" v-model="productInformation.productName")
+                    div
+                        label 地址
+                        Input(  style="width: 70%" v-model="productInformation.address")
+                .InputList
+                    div
+                        label 类型
+                        Select(v-model="productInformation.productCategoryId"  style="width: 70%")
+                          Option(v-for="item in Selectmenu"  :key="item.name" :value="item.name") {{item.label }}         
+                    div
+                        label 商品标签
+                        Select(style="width: 70%"  v-model="productInformation.productTagId" multiple)
+                          Option(v-for="item in productTagList"  :key="item.name" :value="item.name") {{item.label }} 
+                .InputList
+                    div
+                        label 经纬度
+                        Input(v-model="longitudelatitude"  @on-focus="Positioning"  style="width: 70%")
+                    div
+                        label 产品副标题
+                        Input(v-model="productInformation.productTitle"   style="width: 70%")
+                .InputList
+                    div
+                        label 地区
+                        Select(style="width: 23.333%"  v-model="productInformation.provinceId")
+                          Option(v-for="item in province"  :key="item.name" :value="item.name") {{item.label }} 
+                        Select(style="width: 23.333%" v-model="productInformation.cityId")
+                          Option(v-for="item in cityList"  :key="item.name" :value="item.name") {{item.label }}
+                        Select(style="width: 23.333%" v-model="productInformation.areaId")
+                          Option(v-for="item in categoryList"  :key="item.name" :value="item.name") {{item.label }}                                                      
+                    div
+                //-         label 第三方平台
+                //-         Select(style="width: 70%" v-model="productInformation.apiConfig")
+                //-           Option(v-for="item in Thirdparty"  :key="item.name" :value="item.name") {{item.label }}     
+                //- .InputList(v-show="ZYBtype")
+                //-     div
+                //-         label 第三方票型编码
+                //-         Input( v-model="apiCode"  style="width: 70%")
+                //-     div
+                //-         label 是否实名制
+                //-         Select(style="width: 70%" v-model="isRealName")
+                //-           Option(key="1" value="1") 是 
+                //-           Option(key="0" value="0") 否                                                 
+                div(style="padding-top:30px;background:#fff;text-align:center;")
+                    Button(type="success" @click="CreateAproduct(1)") 下一步   
+                    Spin(size="large" fix v-if="spinShow")  
+                transition(enter-active-class="animated zoomInLeft" leave-active-class="animated zoomOutRight")    
+                  div(id="maps" v-show="mapShow"  @click.stop="Stopclosing")
+                    .maptitle 地图
+                      div(@click="ClosetheMap")
+                        Icon(type="close-circled")
+                    #container
+                     div 
+                      label 地图
+                      <input type="text" id="keyword" placeholder="请输入地址">
+                    .Btn
+                      Button(type="success" @click="SubPositioning"  long) 提交
+                      
+            
+            
+            div(v-show="SecondStep" style="margin:0 auto;width:900px")
+                div
+                    img(src="../assets/Home/flow2.png" style="width:100%")
+                div(style="margin-top:30px;background:#fff" )
+                    .imglist(v-for="(list,index) of imgurl" class="demo-upload-list")
+                        img(:src="smallImg(index)" style="width:100px")
+                        .demo-upload-list-cover()
+                            Icon(type="ios-eye-outline" @click.native="handleView(index)")
+                            Icon(type="ios-trash-outline" @click.native="handleRemove(index)")
+                    Upload(
+                        style="display:inline-block"
+                        :before-upload="handleUpload"
+                        :show-upload-list="false"
+                        action="//jsonplaceholder.typicode.com/posts/"
+                    )
+                        img(src="./../assets/Home/a11.png" style="width:100px;")
+                h3 &nbsp; 特色介绍
+                div(style="margin-top:15px; z-index: 0;"  ref="editor")      
+                div(style="margin-top:30px;text-align: center;padding-bottom:30px;")
+                    Button(type="success" @click="CreateAproduct(2)"  style="margin:0 10px;") 下一步                   
+                Modal(title="查看大图" v-model="visible") 
+                    div(style="text-align:center;")
+                        img(:src="amplification" style="width:100%;")
+
+            div(v-show="thirdStep" style="margin:0 auto;width:900px")
+                div
+                    img(src="../assets/Home/flow3.png" style="width:100%")
+                div(style="margin-top:30px;background:#fff" )
+                    div(class="san_top") 新增套餐（必填项）
+                    div(style="margin:0 10px; margin-bottom:8px;font-size:14px;text-indent: 10px;") 注:门市价大于平台价大于结算价
+
+                    div(style="text-align:left;text-indent: 20px;")
+                        Button(type="success" @click.stop="Newpackage") 新增套餐
+                    transition(enter-active-class="animated zoomInLeft" leave-active-class="animated zoomOutRight")  
+                      div(v-show="PackageShow" style="position: absolute;top:0;left:0;width:100%;height:100%;z-index:90;")  
+                        div( class="Package"  @click.stop="Stopclosing") 
+                          .packageTop {{packageTop}}
+                            Button(@click="close" style="float:right;")
+                              Icon(type="close")
+                          .SetMeal
+                            .InputList(style="margin-top:10px;")
+                              div
+                                  label 套餐名称
+                                  Input( :style="[isB?style0: style1]" v-model="Package.packageName")
+                              div
+                                  label 套餐类型
+                                  Select( :style="[isC?style0: style1]" multiple  v-model="productPackageTypeId")
+                                    Option(v-for="item in PackageType" :value="item.value"    :key="item.value") {{item.name}} 
+                              div
+                                  label 门市价
+                                  InputNumber(  style="width: 65%" v-model="Package.retailPrice")    
+                            .InputList(style="margin-top:10px;")
+                              div
+                                  label 销售价
+                                  InputNumber( style="width: 70%" v-model="Package.salePrice")
+                              div
+                                  label 结算价
+                                  InputNumber(  style="width: 70%" v-model="Package.settlementPrice") 
+                              div
+                                  label 平台佣金
+                                  InputNumber(  style="width: 70%" v-model="Package.platformCommission")
+                              div
+                                  label 默认代理佣金
+                                  InputNumber(  style="width: 70%" v-model="Package.defaultAgentCommissionRatio")
+                              div
+                                  label 默认业务佣金
+                                  InputNumber(  style="width: 70%" v-model="Package.defaultSaleCommissionRatio")
+                              //- <div>
+                              //-   <label>代理佣金(元)</label>
+                              //-     <Input v-model="Package.defaultAgentCommissionRatio"  style="width:40%"></Input>
+                              //- </div>
+                              //- <div>
+                              //-   <label>业务佣金(元)</label>
+                              //-   <Input v-model="Package.defaultSaleCommissionRatio"  style="width:40%"></Input>
+                              //- </div>
+                              
+                            div(:style="[isA?styleA: styleB]")  
+                              h3 * 平台销售价 = 结算价 + 平台佣金 + 默认代理佣金 + 默认业务佣金
+
+                            .InputList(style="margin-top:10px;" )
+                              div
+                                  label 销售时间
+                                  Select(style="width: 70%"  v-model="Package.saleDateType")
+                                    Option(v-for="item in saleDateTypeList" :value="item.name"  :key="item.name") {{item.value}}                                             
+                            .InputList(style="margin-top:5px;" v-if="Package.saleDateType=='RANGE'")
+                              div
+                                  label 销售开始时间
+                                  DatePicker( type="date" style="width: 70%" v-model="Package.startDate")
+                              div
+                                  label 销售结束日期
+                                  DatePicker(  type="date" style="width: 70%" v-model="Package.endDate")  
+                            div(style="margin-top:10px;padding: 0 14px;" v-if="Package.saleDateType=='WEEK'")
+                              div
+                                  label 选择时间
+                                  CheckboxGroup(v-model="weekItem" style="display: inline-block;margin-left: 10px;")
+                                    Checkbox(v-for="item in weekItemList"  :label="item.name"  :key="item.name")
+                                      span {{item.value}}    
+                            .InputList()
+                              div
+                                  label 截止售票时间
+                                  TimePicker( style="width: 70%" v-model="Package.endSale")
+                              div
+                                  label 退款
+                                  Select(style="width: 70%" v-model="Package.refundType")    
+                                    Option(value="REFUND") 条件退
+                                    Option(value="NO_REFUND") 概不退换
+                              
+                            div(style="margin:5px 0 0 5px;")
+                                    label(style="width: 72px;") 第三方平台
+                                    Select(style="width: 70%" v-model="Package.apiConfig")
+                                      Option(v-for="item in Thirdparty"  :key="item.name" :value="item.name") {{item.label }}     
+                            .InputList(v-show="ZYBtype" style="margin-top:5px;")
+                                div
+                                    label(style="width:85px;") 第三方票型编码
+                                    Input( v-model="apiCode"  style="width: 70%")
+                                div
+                                    label 是否实名制
+                                    Select(style="width: 70%" v-model="isRealName")
+                                      Option(key="1" value="1") 是 
+                                      Option(key="0" value="0") 否 
+                            
+                            div
+                                h3(style="font-weight: bold;margin-top:10px;")  &nbsp;海报图片：用于海报链接（宽高比 6：7.5） 
+                                Upload(
+                                  :before-upload="handleUpload0"
+                                  :show-upload-list="false"
+                                  action="//jsonplaceholder.typicode.com/posts/"
+                                ) 
+                                  img(:src="PictureImg" style="width:120px;height:150px;margin-left:5px;")
+                            h3(style="font-weight: bold;")  &nbsp;费用须知  
+                            div(style="margin-top:10px;position: relative;z-index: 1;")
+                              div(ref="editors" )
+                            div(style="text-align:center;padding:5px 0;")
+                              Button(type="success" @click="Submitpackage") 提交
+                    div(style="margin-top:30px;" @click.stop="clicktable" )
+                        Table(highlight-row  ref="currentRowTable" :columns="ProductTop" :data="ProductList"   ) 
+                        div(style="margin-top:30px;text-align: center;padding-bottom:30px;")
+                            Button(type="success" @click="jumpProduct"  style="margin:0 10px;") 暂不上架  
+                            Button(type="success" @click="jumpProduct0"  style="margin:0 10px;") 直接上架 
+                                                                                   
+</template>
+
+<script>
+import Updataimg from "./Updataimg.vue";
+import { add0, getDate, withinErrorMargin, hhssmm, accAdd } from "../js/public.js";
+import "animate.css";
+import E from "wangeditor";
+export default {
+   components: {
+      Updataimg
+  },
+  data() {
+    return {
+      spinShow: false,
+      Gps: null,
+      uploadList: [],
+      templateHtml: `<div>
+                        <h3>费用包含</h3>&nbsp; 填写费用的详细信息说明
+                        <h3>入园须知</h3>&nbsp; 填写入园时间，入园地点，取票时间，取票地点，入园方式等
+                        <h3>重要提示</h3>&nbsp; 填写注意事项
+                        <h3>退票说明</h3>&nbsp; 填写是否支持退票（支持：填写退票方式、退票截止时间等）
+                        <h3>改期说明</h3>&nbsp; 是否支持改期（支持：填写改期方式）
+                      </div>`,
+      imglist0: "",
+      PictureImg: require("../assets/Home/a11.png"),
+      isA: false,
+      styleA:{
+        color: 'red'
+      },
+      styleB:{ 
+      },
+      style0:{
+        border: 'red 1px solid',
+        borderRadius: '4px',
+        width: '65%'
+      },
+      style1:{ 
+        width: '65%'
+      },
+      isB: false,
+      isC: false,
+      imgurl: [],
+      editorImg: null,
+      saleDateTypeList: [
+        { name: "RANGE", value: "区间" },
+        // { name: "WEEK", value: "周期" },
+        { name: "NONE", value: "默认" }
+      ],
+      weekItemList: [
+        { name: "MON", value: "周一" },
+        { name: "TUE", value: "周二" },
+        { name: "WED", value: "周三" },
+        { name: "THU", value: "周四" },
+        { name: "FRI", value: "周五" },
+        { name: "SAT", value: "周六" },
+        { name: "SUN", value: "周日" }
+      ],
+      auth_id: "",
+      firstStep: true,
+      SecondStep: false,
+      thirdStep: false,
+      PackageType: [],
+      PackageShow: false,
+      packageTop: "新增套餐",
+      productId: "",
+      editorContent: "",
+      productTagList: [],
+      categoryList: [],
+      cityList: [],
+      province: [],
+      longitudelatitude: "",
+      productInformation: {
+        productName: "",
+        address: "",
+        longitude: "",
+        latitude: "",
+        provinceId: "",
+        cityId: "",
+        areaId: "",
+        productCategoryId: "",
+        productTagId: [],
+        apiConfig: "TONGYOU",
+        productTitle: ""
+      },
+      apiCode: "",
+      isRealName: "",
+      ZYBtype: false,
+      mapShow: false,
+      Thirdparty: [
+        {
+          name: "TONGYOU",
+          label: "同游平台"
+        },
+        {
+          name: "ZYB",
+          label: "智游宝"
+        }
+      ],
+      category: [
+        {
+          name: "ZJY",
+          label: "自驾游"
+        },
+        {
+          name: "YRY",
+          label: "一日游"
+        },
+        {
+          name: "ZBGT",
+          label: "周边跟团"
+        },
+        {
+          name: "DZY",
+          label: "定制游"
+        },
+        {
+          name: "DJJD",
+          label: "度假酒店"
+        },
+        {
+          name: "GCGZ",
+          label: "古镇古村"
+        },
+        {
+          name: "YLC",
+          label: "游乐场自驾游"
+        },
+        {
+          name: "WQDJ",
+          label: "温泉度假"
+        }
+      ],
+      Selectmenu: [],
+      ProductList: [],
+      ProductTop: [
+        {
+          title: "套餐名称",
+          key: "packageName",
+          align: "center",
+          width: 140,
+          fixed: "left"
+        },
+        {
+          title: "套餐类型",
+          key: "productPackageTypeId",
+          width: 140,
+          align: "center",
+          render: (h, par) => {
+            // let data=par.productPackageTypeId.spl
+            let type = par.row.productPackageTypeRelativeList;
+            let text = "";
+
+            for (let i = 0; i < this.PackageType.length; i++) {
+              for (let k = 0; k < type.length; k++) {
+                if (type[k].productPackageTypeId == this.PackageType[i].value) {
+                  text += this.PackageType[i].name + "|";
+                }
+              }
+            }
+
+            return text;
+          }
+        },
+        {
+          title: "门市价",
+          key: "retailPrice",
+          width: 140,
+          align: "center"
+        },
+        {
+          title: "销售价",
+          key: "salePrice",
+          width: 140,
+          align: "center"
+        },
+        {
+          title: "结算价",
+          key: "settlementPrice",
+          width: 140,
+          align: "center"
+        },
+        {
+          title: "平台佣金",
+          key: "platformCommission",
+          width: 140,
+          align: "center"
+        },
+        {
+          title: "销售开始时间",
+          width: 140,
+          key: "startDate",
+          align: "center",
+          render: (h, par) => {
+            return getDate(par.row.startDate);
+          }
+        },
+        {
+          title: "销售结束日期",
+          width: 140,
+          key: "endDate",
+          align: "center",
+          render: (h, par) => {
+            return getDate(par.row.endDate);
+          }
+        },
+        {
+          title: "截止销售时间",
+          width: 140,
+          key: "endSaleStr",
+          align: "center"
+        },
+        {
+          title: "退款",
+          key: "refundType",
+          width: 140,
+          align: "center",
+          render: (h, par) => {
+            let text = par.row.refundType;
+            if (text == "REFUND") {
+              return "条件退";
+            } else {
+              return "概不退换";
+            }
+          }
+        },
+        {
+          title: "操作",
+          key: "startDate",
+          width: 160,
+          fixed: "right",
+          align: "center",
+          render: (h, params) => {
+            return h("div", [
+              h(
+                "Button",
+                {
+                  props: {
+                    type: "success",
+                    size: "small"
+                  },
+                  style: {
+                    marginRight: "5px"
+                  },
+                  on: {
+                    click: () => {
+                      this.PackageEditor(params.index);
+                    }
+                  }
+                },
+                "编辑"
+              ),
+              h(
+                "Button",
+                {
+                  props: {
+                    type: "error",
+                    size: "small"
+                  },
+                  on: {
+                    click: () => {
+                      this.packageremove(params.index);
+                    }
+                  }
+                },
+                "删除"
+              )
+            ]);
+          }
+        }
+      ],
+      animal: "",
+      Title: "商品管理",
+      list: "产品上新",
+      visible: false,
+      amplification: "",
+      flow: 1,
+      value: "",
+      AvatarUrl:
+        "https://o5wwk8baw.qnssl.com/a42bdcc1178e62b4694c830f028db5c0/avatar",
+      imglist: [],
+      productPackageTypeId: [],
+      weekItem: [],
+      Package: {
+        apiConfig: "TONGYOU",
+        saleDateType: "NONE",
+        packageName: "",
+        coverImg: "",
+        retailPrice: 0,
+        salePrice: 0,
+        settlementPrice: 0,
+        platformCommission: 0,
+        defaultAgentCommissionRatio: 0,
+        defaultSaleCommissionRatio: 0,
+        startDate: "",
+        endDate: "",
+        endSale: "23:59:59",
+        refundType: "NO_REFUND",
+        detail: "",
+        defaultAgentCommissionRatio: 0,
+        defaultSaleCommissionRatio: 0
+      },
+      pageageurl: "",
+      pageagetypelist: "",
+      productPackageId: "",
+      initialization: false
+    };
+  },
+  computed: {},
+  methods: {
+    close() {
+      this.PackageShow = !this.PackageShow;
+    },
+
+    //跳转产品页
+    jumpProduct() {
+      let iid = this.auth_id - 1;
+      console.log(iid); 
+      this.$router.push({path: '/merchants/productinformation/' + iid});
+    },
+
+    //上架跳转
+    jumpProduct0() {
+      let list = this.ProductList;
+      console.log(list);
+      if(list.length == 0){
+        this.$Modal.confirm({
+            title: '提示信息',
+            content: '<h2>请先添加套餐</h2>',
+            onOk: () => {
+                // this.$Message.info('Clicked ok');
+            },
+            onCancel: () => {
+                // this.$Message.info('Clicked cancel');
+            }
+        });
+      }else{
+        let iid = this.auth_id - 1;
+        let data = {};
+        data.productId = this.productId;
+        this.axios
+          .post(`${this.AjaxUrl}/ty_business/product/putOrOutProduct`, this.qs.stringify(data))
+          .then(res => {
+            if (res.errorCode == 200) {
+              console.log(res);
+              this.success("上架成功");
+              this.$router.push({path: '/merchants/productinformation/' + iid});
+            }else{
+              this.error(res.message);
+            }
+          })
+          .catch(err => {});
+      }
+    },
+
+    //上传海报图片
+    handleUpload0(file) {
+      var reader = new FileReader();
+      var _this = this;
+      let data = new FormData();
+      data.append("file", file);
+      this.axios
+        .post(`${this.AjaxUrl}/ty_business/upload`, data)
+        .then(res => {
+          if (res.errorCode == 200) {
+            this.imglist0 = res.data;
+          }else{
+            this.error(res.message);
+          }
+        })
+        .catch(err => {});
+
+      reader.readAsDataURL(file);
+      reader.onload = function(e) {
+        _this.PictureImg = this.result;
+      };
+      return false;
+    },
+
+    //套餐提交
+    Submitpackage(Listtype = 1, productId = "") {
+      // return  false;
+      let data = {};
+      let {
+        apiConfig,
+        coverImg,
+        retailPrice,
+        salePrice,
+        settlementPrice,
+        platformCommission,
+        defaultAgentCommissionRatio,
+        defaultSaleCommissionRatio,
+        packageName,
+        startDate,
+        endDate,
+        endSale,
+        refundType,
+        detail,
+        saleDateType
+      } = this.Package;
+      if (this.Package.packageName == "" || this.Package.packageName == null) {
+            this.isB = true;
+          }
+      // if (this.productPackageTypeId == "" || this.productPackageTypeId == null) {
+      //       this.isC = true;
+      //     }
+      if (this.Package.endSale == "" || this.Package.endSale == null) {
+            this.error("请输入截止售票时间!");
+          }
+      data.productId = this.productId;
+      console.log(data.productId);
+      data.apiConfig = apiConfig;
+
+      if (this.ZYBtype) {
+          let { apiCode, isRealName } = this;
+          if (!apiCode || !isRealName) {
+            this.error("所有内容都必须填写!");
+            return false;
+          }
+          data.apiCode = this.apiCode;
+          data.isRealName = this.isRealName;
+        }
+
+      if (endSale != "") {
+        endSale = hhssmm(endSale);
+        data.isEndSale = 1;
+        data.endSale = endSale;
+      }
+      data.saleDateType = saleDateType;
+      if (saleDateType == "NONE") {
+      } else if (saleDateType == "RANGE") {
+        startDate = getDate(startDate);
+        endDate = getDate(endDate);
+
+        data.startDate = startDate;
+        data.endDate = endDate;
+      } else {
+        let { weekItem } = this;
+        let text = "";
+        for (let i = 0; i < weekItem.length; i++) {
+          if (i + 1 == weekItem.length) {
+            text += weekItem[i];
+          } else {
+            text += weekItem[i] + "|";
+          }
+        }
+        data.weekItem = text;
+      }
+      let num1 = accAdd(Number(settlementPrice),Number(platformCommission));
+      let num2 = accAdd(Number(defaultAgentCommissionRatio),Number(defaultSaleCommissionRatio));
+      let num3 = accAdd(num1,num2);
+      console.log(num3);
+      console.log(Number(salePrice));
+       if(num3 != Number(salePrice)){
+        this.error("平台销售价 = 结算价 + 平台佣金 + 默认代理佣金 + 默认业务佣金")
+        this.isA = true;
+      }else{
+      data.retailPrice = Number(retailPrice);
+      data.salePrice = Number(salePrice);
+      data.settlementPrice = Number(settlementPrice);
+      data.platformCommission = Number(platformCommission);
+      
+      data.defaultAgentCommission = Number(defaultAgentCommissionRatio);
+      data.defaultSaleCommission = Number(defaultSaleCommissionRatio);
+      data.packageName = packageName;
+      data.coverImg = this.imglist0;
+      console.log(data.coverImg);
+
+      data.refundType = refundType;
+      data.detail = detail;
+      data.auth_id = this.auth_id;
+      data.productPackageTypeId = "";
+
+      data.productPackageTypeId = "";
+      for (let i = 0; i < this.productPackageTypeId.length; i++) {
+        if (i + 1 == this.productPackageTypeId.length) {
+          data.productPackageTypeId += this.productPackageTypeId[i];
+        } else {
+          data.productPackageTypeId += this.productPackageTypeId[i] + "|";
+        }
+      }
+      let url = this.pageageurl;
+      if (this.pageagetypelist != 1) {
+        data.productPackageId = this.productPackageId;
+      }
+
+      this.axios
+        .post(url, this.qs.stringify(data))
+        .then(res => {
+          if(res.errorCode == 200){
+            this.CreateAproduct(3);
+            this.success("操作成功！");
+            this.PackageShow = false;
+          }else if(res.errorCode == 400){
+            this.error("所有内容都必须填写!");
+          }else if(res.errorCode == 303){
+            this.error(res.message);
+          }else{
+            this.error(res.message);
+          }
+        })
+        .catch(err => {});
+      }
+    },
+
+    //清空套餐
+    Newpackage() {
+      this.isA = false;
+      this.isB = false;
+      this.isC = false;
+      this.pageagetypelist = 1;
+      this.PackageShow = true;
+      for (let key in this.Package) {
+        this.Package[key] = "";
+      }
+      this.Package.apiConfig = "TONGYOU";
+      this.apiCode = "";
+      this.isRealName = "";
+      this.Package.detail = "";
+      this.Package.endSale = "23:59:59";
+      this.Package.saleDateType = "NONE";
+      this.Package.refundType = "REFUND";
+      this.Package.retailPrice = 0;
+      this.Package.salePrice = 0;
+      this.Package.settlementPrice = 0;
+      this.Package.platformCommission = 0;
+      this.Package.defaultAgentCommissionRatio = 0;
+      this.Package.defaultSaleCommissionRatio = 0;
+      this.PictureImg = require("../assets/Home/a11.png");
+      this.imglist0 = "";
+
+      this.productPackageTypeId = [];
+      this.pageageurl = `${this.AjaxUrl}/ty_business/product/package/insert`;
+      this.packageTop = "新增套餐";
+      var editors = new E(this.$refs.editors);
+      // editors.customConfig.uploadImgShowBase64 = true;
+      editors.customConfig.colors = [
+        '#000000',
+        '#eeece0',
+        '#1c487f',
+        '#4d80bf',
+        '#c24f4a',
+        '#8baa4a',
+        '#7b5ba1',
+        '#46acc8',
+        '#f9963b',
+        '#ffffff',
+        '#0000C6',
+        '#FF0000',
+        '#00FF00',
+        '#0000FF',
+        '#FFFF00',
+        '#00FFFF',
+        '#FF00FF',
+        '#C0C0C0'
+    ];
+    var config = getCookie('token');
+    var ImgUrl = this.ImgUrl;
+    editors.customConfig.uploadImgServer = `${this.AjaxUrl}/ty_business/upload`;
+    var data = new FormData();
+    editors.customConfig.uploadImgParams = {
+        file: "file"
+    }
+    editors.customConfig.uploadFileName = 'file';
+    // editors.customConfig.uploadImgMaxSize = 10 * 1024 * 1024;
+      editors.customConfig.uploadImgHeaders = {
+          'token' : config
+      };
+      editors.customConfig.uploadImgHooks = {
+          before: function (xhr, editor, files) {
+              this.editorImg = files[0].name.split(".")
+          },
+          error: function (xhr, editor) {
+              alert("2:"+xhr);
+              // xhr 是 XMLHttpRequst 对象，editor 是编辑器对象
+          },
+          fail: function (xhr, editor, result) {
+              alert("1:"+xhr);
+          },
+          success:function(xhr, editor, result){
+              console.log(result)
+          },
+          customInsert: function (insertImg, result, editor) {
+              // 图片上传并返回结果，自定义插入图片的事件（而不是编辑器自动插入图片！！！）
+              // insertImg 是插入图片的函数，editor 是编辑器对象，result 是服务器端返回的结果
+              let ext = this.editorImg;
+              if(ext[1] == "png"){
+                insertImg(ImgUrl+result.data+'.png');
+              }else if(ext[1] == "jpg"){
+                insertImg(ImgUrl+result.data+'.jpg');
+              }
+          }
+      };
+      editors.customConfig.onchange = html => {
+        this.Package.detail = html;
+      };
+      editors.create();
+      editors.txt.html(this.templateHtml);
+    },
+
+    //编辑获取套餐列表
+    PackageEditor(index) {
+      this.pageagetypelist = 2;
+      this.pageageurl = `${this.AjaxUrl}/ty_business/product/package/update`;
+      this.packageTop = "编辑套餐";
+      let {
+        apiConfig,
+        apiCode,
+        isRealName,
+        packageName,
+        coverImg,
+        retailPrice,
+        salePrice,
+        settlementPrice,
+        platformCommission,
+        defaultAgentCommission,
+        defaultSaleCommission,
+        productPackageTypeId,
+        startDate,
+        endDate,
+        endSaleStr,
+        refundType,
+        detail,
+        productPackageId,
+        saleDateType,
+        productPackageTypeRelativeList
+      } = this.ProductList[index];
+      this.productPackageTypeId = [];
+      for (let i of productPackageTypeRelativeList) {
+        this.productPackageTypeId.push(i.productPackageTypeId);
+      }
+      this.Package.saleDateType = saleDateType;
+      if (saleDateType == "WEEK") {
+        let { weekItem } = this.ProductList[index];
+        weekItem = weekItem.split("|");
+        for (let i of weekItem) {
+          this.weekItem.push(i);
+        }
+      }
+
+      this.Package.packageName = packageName;
+      this.Package.retailPrice = retailPrice;
+      this.Package.salePrice = salePrice;
+      this.Package.settlementPrice = settlementPrice;
+      this.Package.platformCommission = platformCommission;
+      this.Package.defaultAgentCommissionRatio = defaultAgentCommission;
+      this.Package.defaultSaleCommissionRatio = defaultSaleCommission;
+      this.Package.startDate = getDate(startDate);;
+      this.Package.endDate = getDate(endDate);
+      this.Package.endSale = endSaleStr;
+      this.Package.refundType = refundType;
+      this.Package.detail = detail;
+      console.log(detail);
+      this.productPackageId = productPackageId;
+
+      this.PictureImg = this.ImgUrl + coverImg + "_small.jpg";
+      this.Package.apiConfig = apiConfig;
+      console.log(this.Package.apiConfig);
+      if (this.Package.apiConfig == "ZYB") {
+          this.apiCode = apiCode;
+          this.isRealName = isRealName.toString();
+        }
+      var editors = new E(this.$refs.editors);
+      // editors.customConfig.uploadImgShowBase64 = true;
+      editors.customConfig.colors = [
+        '#000000',
+        '#eeece0',
+        '#1c487f',
+        '#4d80bf',
+        '#c24f4a',
+        '#8baa4a',
+        '#7b5ba1',
+        '#46acc8',
+        '#f9963b',
+        '#ffffff',
+        '#0000C6',
+        '#FF0000',
+        '#00FF00',
+        '#0000FF',
+        '#FFFF00',
+        '#00FFFF',
+        '#FF00FF',
+        '#C0C0C0'
+    ];
+      var config = getCookie('token');
+      var ImgUrl = this.ImgUrl;
+      editors.customConfig.uploadImgServer = `${this.AjaxUrl}/ty_business/upload`;
+      var data = new FormData();
+      editors.customConfig.uploadImgParams = {
+          file: "file"
+      }
+      editors.customConfig.uploadFileName = 'file';
+      // editors.customConfig.uploadImgMaxSize = 10 * 1024 * 1024;
+        editors.customConfig.uploadImgHeaders = {
+            // 'Accept' : 'multipart/form-data',
+            'token' : config
+        };
+        editors.customConfig.uploadImgHooks = {
+            before: function (xhr, editor, files) {
+                 this.editorImg = files[0].name.split(".")
+            },
+            error: function (xhr, editor) {
+                alert("2:"+xhr);
+                // 图片上传出错时触发
+                // xhr 是 XMLHttpRequst 对象，editor 是编辑器对象
+            },
+            fail: function (xhr, editor, result) {
+                alert("1:"+xhr);
+            },
+            success:function(xhr, editor, result){
+                console.log(result);
+            },
+            customInsert: function (insertImg, result, editor, files) {
+                // 图片上传并返回结果，自定义插入图片的事件（而不是编辑器自动插入图片！！！）
+                // insertImg 是插入图片的函数，editor 是编辑器对象，result 是服务器端返回的结果
+                let ext = this.editorImg;
+                if(ext[1] == "png"){
+                  insertImg(ImgUrl+result.data+'.png');
+                }else if(ext[1] == "jpg"){
+                  insertImg(ImgUrl+result.data+'.jpg');
+                }
+                console.log(result.data);
+                
+            }
+        };
+      editors.customConfig.onchange = html => {
+        this.Package.detail = html;
+      };
+      editors.create();
+      editors.txt.html(detail);
+
+      this.PackageShow = true;
+    },
+    //套餐删除
+    packageremove(index) {
+      this.$Modal.confirm({
+        title: "警告",
+        content: "<p>确认删除该套餐吗？</p>",
+        onOk: () => {
+          let url = `${this.AjaxUrl}/ty_business/product/package/delete`;
+          let data = {};
+          data.productPackageId = this.ProductList[index].productPackageId;
+          console.log(data);
+          this.axios
+            .post(url, this.qs.stringify(data))
+            .then(res => {
+              this.CreateAproduct(3);
+              this.success("操作成功！");
+            })
+            .catch(err => {});
+        },
+        onCancel: () => {
+          // this.$Message.info("Clicked cancel");
+        }
+      });
+    },
+    smallImg(index) {
+      return this.imgurl[index];
+    },
+    //提交
+    CreateAproduct(type = 1) {
+      if (type == 1) {
+        for (let key in this.productInformation) {
+          if (this.productInformation[key] == "") {
+            this.error("所有内容都必须填写!");
+            return false;
+          }
+        }
+        let data = this.productInformation;
+        data.productTag = "";
+        console.log(this.productInformation.productTagId)
+      for (let i = 0; i < this.productInformation.productTagId.length; i++) {
+        if (i + 1 == this.productInformation.productTagId.length) {
+          data.productTag += this.productInformation.productTagId[i];
+        } else {
+          data.productTag += this.productInformation.productTagId[i] + "|";
+        }
+      }
+      console.log(data.productTag);
+        // if (this.ZYBtype) {
+        //   let { apiCode, isRealName } = this;
+        //   if (!apiCode || !isRealName) {
+        //     this.error("所有内容都必须填写!");
+        //     return false;
+        //   }
+        //   data.apiCode = this.apiCode;
+        //   data.isRealName = this.isRealName;
+        // }
+        data.auth_id = this.auth_id;
+        this.axios
+          .post(
+            `${this.AjaxUrl}/ty_business/product/insert`,
+            this.qs.stringify(data)
+          )
+          .then(res => {
+            //this.flow = 2;
+            if(res.errorCode == 200){
+              console.log(res.data)
+              this.firstStep = false;
+              this.SecondStep = true;
+              this.thirdStep = false;
+
+              this.productId = res.data;
+              // var editor = new E(this.$refs.editor);
+              // editor.customConfig.uploadImgShowBase64 = true;
+              // editor.customConfig.onchange = html => {
+              //   this.editorContent = html;
+              // };
+              // editor.create();
+            }else if(res.errorCode == 303){
+              this.error(res.message);
+            }else{
+              this.error(res.message);
+            }
+            
+          })
+          .catch(err => {
+            console.log(err);
+          });
+      } else if (type == 2) {
+        let data = {};
+        data.productId = this.productId;
+        data.detail = this.editorContent;
+        data.auth_id = this.auth_id;
+        this.axios
+          .post(
+            `${this.AjaxUrl}/ty_business/product/update`,
+            this.qs.stringify(data)
+          )
+          .then(res => {
+            if (res.errorCode == 200) {
+              this.firstStep = false;
+              this.SecondStep = false;
+              this.thirdStep = true;
+              //this.imglist.push({ url: res.data });
+            }else if(res.errorCode == 303){
+              this.error(res.message);
+            }else{
+              this.error(res.message);
+            }
+            if (!this.initialization) {
+        var editors = new E(this.$refs.editor);
+        editors.customConfig.zIndex = 100;
+              // editors.customConfig.uploadImgShowBase64 = true;
+        editors.customConfig.colors = [
+            '#000000',
+            '#eeece0',
+            '#1c487f',
+            '#4d80bf',
+            '#c24f4a',
+            '#8baa4a',
+            '#7b5ba1',
+            '#46acc8',
+            '#f9963b',
+            '#ffffff',
+            '#0000C6',
+            '#FF0000',
+            '#00FF00',
+            '#0000FF',
+            '#FFFF00',
+            '#00FFFF',
+            '#FF00FF',
+            '#C0C0C0'
+        ];
+      var config = getCookie('token');
+      var ImgUrl = this.ImgUrl;
+      editors.customConfig.uploadImgServer = `${this.AjaxUrl}/ty_business/upload`;
+      var data = new FormData();
+      editors.customConfig.uploadImgParams = {
+          file: "file"
+      }
+      editors.customConfig.uploadFileName = 'file';
+      // editors.customConfig.uploadImgMaxSize = 10 * 1024 * 1024;
+      editors.customConfig.uploadImgHeaders = {
+          // 'Accept' : 'multipart/form-data',
+          'token' : config
+      };
+      editors.customConfig.uploadImgHooks = {
+          before: function (xhr, editor, files) {
+              this.editorImg = files[0].name.split(".")
+          },
+          error: function (xhr, editor) {
+              alert("2:"+xhr);
+              // 图片上传出错时触发
+              // xhr 是 XMLHttpRequst 对象，editor 是编辑器对象
+          },
+          fail: function (xhr, editor, result) {
+              alert("1:"+xhr);
+          },
+          success:function(xhr, editor, result){
+              console.log(result);
+          },
+          customInsert: function (insertImg, result, editor) {
+              // 图片上传并返回结果，自定义插入图片的事件（而不是编辑器自动插入图片！！！）
+              // insertImg 是插入图片的函数，editor 是编辑器对象，result 是服务器端返回的结果
+              console.log(result.data);
+              let ext = this.editorImg;
+              if(ext[1] == "png"){
+                insertImg(ImgUrl+result.data+'.png');
+              }else if(ext[1] == "jpg"){
+                insertImg(ImgUrl+result.data+'.jpg');
+              }
+          }
+      };
+              editors.customConfig.onchange = html => {
+                this.Package.detail = html;
+              };
+              editors.create();
+            }
+            this.initialization = true;
+          })
+          .catch(err => {});
+      } else {
+        let data = {
+          params: {
+            productId: this.productId
+          }
+        };
+        this.axios
+          .get(`${this.AjaxUrl}/ty_business/product/package/getList`, data)
+          .then(res => {
+            if (res.errorCode == 200) {
+              this.ProductList = res.data.list;
+            }else if(res.errorCode == 303){
+              this.error(res.message);
+            }else{
+              this.error(res.message);
+            }
+          })
+          .catch(err => {});
+      }
+    },
+    SubPositioning() {
+      this.longitudelatitude =
+        this.productInformation.longitude +
+        "," +
+        this.productInformation.latitude;
+      this.mapShow = false;
+    },
+    ClosetheMap() {
+      this.mapShow = false;
+    },
+    shutdown() {
+      this.mapShow = false;
+    },
+    //地图
+    Positioning() {
+      this.mapShow = true;
+      let _this = this;
+      // map = new AMap.Map("container", {
+      //   resizeEnable: true,
+      //   zoom: 11,
+      // });
+      // //地图中添加地图操作ToolBar插件
+      // map.plugin(["AMap.ToolBar",'AMap.Autocomplete','AMap.PlaceSearch'], function(e) {
+      //   //设置地位标记为自定义标记
+      //   var toolBar = new AMap.ToolBar();
+      //   map.addControl(toolBar);
+      //   var autoOptions = {
+      //       // city:'',//城市，默认全国
+      //       input: "keyword"//使用联想输入的input的id
+      //   };
+      //   var autocomplete = new AMap.Autocomplete(autoOptions);
+      //   var placeSearch = new AMap.PlaceSearch({
+      //       // city:'',
+      //       map:map
+      //   });
+      //   AMap.event.addListener(autocomplete, "select", function(e){
+      //   //
+      //   placeSearch.setCity(e.poi.adcode);
+      //   placeSearch.search(e.poi.name);
+      //   console.log(e.poi)
+      //    let gps=[];
+      //    gps.push(e.poi.location.lng)
+      //    gps.push(e.poi.location.lat)
+      //    _this.Gps=gps;
+      //    _this.productInformation.longitude = e.poi.location.lng;
+      //    _this.productInformation.latitude = e.poi.location.lat;
+      //   });
+      // });
+      
+      let marker;
+      map.on("click", function(e) {
+        if (marker) {
+          marker.setMap(null);
+          marker = null;
+        }
+        console.log('您在[ ' + e.lnglat.getLng() + ',' + e.lnglat.getLat() + ' ]的位置点击了地图！');
+        marker = new AMap.Marker({
+          map: map, 
+          icon: "http://webapi.amap.com/theme/v1.3/markers/n/mark_b.png",
+          position: [e.lnglat.getLng(), e.lnglat.getLat()]
+        });
+        marker.setMap(map);
+        if(e.lnglat.getLng() != "" || e.lnglat.getLng() != null){
+          _this.productInformation.longitude = e.lnglat.getLng();
+          _this.productInformation.latitude = e.lnglat.getLat();
+        }
+      });
+    },
+    Stopclosing() {},
+
+    //上传图片
+    handleUpload(file) {
+      const check = this.uploadList.length < 16;
+      if(check){
+        
+        var reader = new FileReader();
+        var _this = this;
+        let data = new FormData();
+        data.append("sort", this.imglist.length);
+        data.append("productId", this.productId);
+        data.append("productImg", file);
+        this.axios
+          .post(`${this.AjaxUrl}/ty_business/product/picture/insert`, data)
+          .then(res => {
+            if (res.errorCode == 200) {
+              this.imglist.push({ url: res.data });
+              console.log(this.imglist);
+              this.uploadList.push("a");
+              reader.readAsDataURL(file);
+              reader.onload = function(e) {
+                //console.log(this.result);
+                _this.imgurl.push(this.result);
+              };
+            }else{
+              this.error("图片上传错误")
+            }
+            console.log(res.errorCode);
+          })
+          .catch(err => {});
+        
+        return check
+      }else{
+        this.error("上传图片不超过16张")
+        return false;
+      }
+    },
+
+    //图片放大
+    handleView(index) {
+      this.visible = true;
+      this.amplification = this.imgurl[index];
+      // this.amplification = this.imglist[index].url + ".jpg";
+    },
+
+    //图片删除
+    handleRemove(index) {
+      let data = {};
+      data.productId = this.productId;
+      data.pictureUrl = this.imglist[index].url;
+      this.axios
+        .post(
+          `${this.AjaxUrl}/ty_business/product/picture/delete`,
+          this.qs.stringify(data)
+        )
+        .then(res => {
+          if (res.errorCode == 200) {
+            console.log(res.message)
+            this.imglist.splice(index,1);
+            this.imgurl.splice(index,1);
+            this.uploadList.pop("a");
+          }
+        })
+        .catch(err => {});
+    },
+    clicktable() {},
+    Provincialchange() {
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/area/byPid`, {})
+        .then(res => {
+          let data = res.data;
+          for (let i of data) {
+            this.province.push({ label: i.areaName, name: i.areaId });
+          }
+          this.productInformation.provinceId = data[0].areaId;
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    },
+    Citychanges() {
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/area/byPid`, {
+          params: {
+            pid: this.productInformation.provinceId
+          }
+        })
+        .then(res => {
+          let data = res.data;
+          this.cityList = [];
+          for (let i of data) {
+            this.cityList.push({ label: i.areaName, name: i.areaId });
+          }
+          this.productInformation.cityId = data[0].areaId;
+        })
+        .catch(err => {});
+    },
+    Townchange() {
+      this.axios
+        .get(`${this.AjaxUrl}/ty_business/area/byPid`, {
+          params: {
+            pid: this.productInformation.cityId
+          }
+        })
+        .then(res => {
+          let data = res.data;
+          this.categoryList = [];
+          for (let i of data) {
+            this.categoryList.push({ label: i.areaName, name: i.areaId });
+          }
+          this.productInformation.areaId = data[0].areaId;
+        })
+        .catch(err => {});
+    },
+    error(text) {
+      this.$Message.error(text);
+    },
+    success(text) {
+      this.$Message.success(text);
+    },
+
+    //获取地图
+    maps() {
+      let _this = this;
+      map = new AMap.Map("container", {
+        resizeEnable: true,
+        zoom: 11,
+      });
+      //地图中添加地图操作ToolBar插件
+      map.plugin(["AMap.ToolBar",'AMap.Autocomplete','AMap.PlaceSearch'], function(e) {
+        //设置地位标记为自定义标记
+        var toolBar = new AMap.ToolBar();
+        map.addControl(toolBar);
+        var autoOptions = {
+            // city:'',//城市，默认全国
+            input: "keyword"//使用联想输入的input的id
+        };
+        var autocomplete = new AMap.Autocomplete(autoOptions);
+        var placeSearch = new AMap.PlaceSearch({
+            // city:'',
+            map:map
+        });
+        AMap.event.addListener(autocomplete, "select", function(e){
+        //
+        placeSearch.setCity(e.poi.adcode);
+        placeSearch.search(e.poi.name);
+        console.log(e.poi)
+         let gps=[];
+         gps.push(e.poi.location.lng)
+         gps.push(e.poi.location.lat)
+         _this.Gps=gps;
+         _this.productInformation.longitude = e.poi.location.lng;
+         _this.productInformation.latitude = e.poi.location.lat;
+        });
+      });
+    }
+  },
+  components: {
+    Updataimg
+  },
+  watch: {
+    "productInformation.productTagId": {
+      handler: function(val, oldVal) {
+        if (this.productInformation.productTagId.length > 3) {
+          this.error("商品标签最多不超过3个");
+          this.productInformation.productTagId.pop();
+          console.log(this.productInformation.productTagId);
+          return false;
+        }
+      },
+      deep: true
+    },
+    "Package.apiConfig": {
+      handler: function(val, oldVal) {
+        if (val == "ZYB") {
+          this.ZYBtype = true;
+        } else {
+          this.ZYBtype = false;
+        }
+      },
+      deep: true
+    },
+    "productInformation.provinceId": {
+      handler: function(val, oldVal) {
+        this.Citychanges();
+      },
+      deep: true
+    },
+    "productInformation.cityId": {
+      handler: function(val, oldVal) {
+        this.Townchange();
+      },
+      deep: true
+    }
+  },
+  created() {
+    this.Provincialchange();
+    let _this = this;
+    this.axios
+      .all([
+        this.axios.get(
+          `${this.AjaxUrl}/ty_business/product/category/allCategory`
+        ),
+        this.axios.get(`${this.AjaxUrl}/ty_business/product/tag/allTag`)
+      ])
+      .then(
+        this.axios.spread(function(acct, perms) {
+          // 两个请求现在都执行完成
+          let datas = acct.data;
+          for (let i of datas) {
+            _this.Selectmenu.push({
+              label: i.categoryName,
+              name: i.productCategoryId
+            });
+          }
+          _this.productInformation.productCategoryId =
+            datas[0].productCategoryId;
+          let data = perms.data;
+          for (let i of data) {
+            _this.productTagList.push({
+              label: i.productTagName,
+              name: i.productTagId
+            });
+          }
+          // _this.productInformation.productTag = data[0].productTagId;
+          //perms.data;
+        })
+      );
+  },
+  mounted() {
+      //初始化加载
+    this.maps();
+    var editors = new E(this.$refs.editor);
+    // editors.customConfig.uploadImgShowBase64 = true;
+    editors.customConfig.colors = [
+        '#000000',
+        '#eeece0',
+        '#1c487f',
+        '#4d80bf',
+        '#c24f4a',
+        '#8baa4a',
+        '#7b5ba1',
+        '#46acc8',
+        '#f9963b',
+        '#ffffff',
+        '#0000C6',
+        '#FF0000',
+        '#00FF00',
+        '#0000FF',
+        '#FFFF00',
+        '#00FFFF',
+        '#FF00FF',
+        '#C0C0C0'
+    ];
+    var config = getCookie('token');
+    var ImgUrl = this.ImgUrl;
+    editors.customConfig.uploadImgServer = `${this.AjaxUrl}/ty_business/upload`;
+    var data = new FormData();
+    editors.customConfig.uploadImgParams = {
+        file: "file"
+    }
+    editors.customConfig.uploadFileName = 'file';
+    // editors.customConfig.uploadImgMaxSize = 10 * 1024 * 1024;
+      editors.customConfig.uploadImgHeaders = {
+          // 'Accept' : 'multipart/form-data',
+          'token' : config
+      };
+      editors.customConfig.uploadImgHooks = {
+          before: function (xhr, editor, files) {
+              this.editorImg = files[0].name.split(".")
+          },
+          error: function (xhr, editor) {
+              alert("2:"+xhr);
+              // 图片上传出错时触发
+              // xhr 是 XMLHttpRequst 对象，editor 是编辑器对象
+          },
+          fail: function (xhr, editor, result) {
+              alert("1:"+xhr);
+          },
+          success:function(xhr, editor, result){
+              console.log(result)
+              // insertImg(result.data);
+          },
+          customInsert: function (insertImg, result, editor) {
+              // 图片上传并返回结果，自定义插入图片的事件（而不是编辑器自动插入图片！！！）
+              // insertImg 是插入图片的函数，editor 是编辑器对象，result 是服务器端返回的结果
+              console.log(result.data);
+              let ext = this.editorImg;
+              if(ext[1] == "png"){
+                insertImg(ImgUrl+result.data+'.png');
+              }else if(ext[1] == "jpg"){
+                insertImg(ImgUrl+result.data+'.jpg');
+              }
+          }
+      };
+    editors.customConfig.onchange = html => {
+      this.editorContent = html;
+    };
+    editors.create();
+    this.auth_id = this.$route.params.id;
+    this.spinShow = true;
+    this.axios
+      .get(`${this.AjaxUrl}/ty_business/product/package/type/allPackageType`, {})
+      .then(res => {
+        if (res.errorCode == 200) {
+          for (let i of res.data) {
+            this.PackageType.push({
+              name: i.typeName,
+              value: i.productPackageTypeId
+            });
+          }
+          this.spinShow = false;
+        }else if(res.errorCode == 303){
+            this.$Message.error(res.message);
+            deleteCookie("token");
+            this.$emit("Logins", "login");
+        }
+      })
+      .catch(err => {});
+  }
+};
+</script>
+
+<style  lang="scss" scoped>
+.amap-marker{
+  z-index: 120 !important;
+}
+.w-e-menu{
+  z-index: 2 !important;
+}
+.w-e-text-container{
+  z-index: 2 !important;
+}
+.w-e-text img{
+    width: 250px !important;
+    height: 180px !important;   		
+}
+#keyword{
+  width: 30%;
+  position: absolute;
+  top: 20px;
+  right: 0;
+  z-index: 120;
+  line-height: 30px;
+  font-size: 15px;
+  margin-right: 10px;
+  padding-left: 5px;
+  border-radius: 4px;
+}
+#maps {
+  width: 800px;
+  height: 600px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  margin-top: -150px;
+  margin-left: -400px;
+  background: #ffffff;
+  z-index: 999;
+  border-radius: 12px;
+  border: 2px solid #eee;
+  .maptitle {
+    height: 40px;
+    font-size: 20px;
+    line-height: 40px;
+    text-indent: 20px;
+    background: #eee;
+    div {
+      float: right;
+      height: 100%;
+      width: 100px;
+      cursor: pointer;
+    }
+  }
+  #container {
+    height: 520px;
+    top: 40px;
+  }
+  .Btn {
+    width: 100%;
+    text-align: center;
+    margin-top: 524px;
+    height: 30px;
+  }
+}
+.Title {
+  height: 40px;
+  line-height: 40px;
+  color: #929292;
+  background: #f7f7f7;
+  text-indent: 16px;
+  font-size: 16px;
+  border-bottom: 1px solid #52c0c7;
+
+  span {
+    margin-left: 4px;
+  }
+}
+.Package {
+  position: absolute;
+  height: 700px;
+  overflow: auto;
+  width: 80%;
+  background: #fff;
+  border: 4px solid #eee;
+  z-index: 888;
+  border-radius: 12px;
+  top: 5%;
+  left: 50%;
+  margin-left: -40%;
+  label{
+    width: 72px;
+  }
+  .packageTop {
+    font-size: 16px;
+    text-indent: 24px;
+    height: 30px;
+    line-height: 30px;
+    border-bottom: 1px solid #eee;
+  }
+}
+.SetMeal {
+  min-height: 600px;
+  padding: 0 10px;
+  overflow: auto;
+}
+.InputList {
+  display: flex;
+  background: #ffffff;
+  justify-content: space-between;
+  align-items: center;
+  div {
+    flex: 1;
+    margin: 4px 0;
+    label {
+      display: inline-block;
+      width: 72px;
+      text-align: left;
+      margin-left: 5px;
+    }
+  }
+}
+
+.demo-upload-list {
+  display: inline-block;
+  width: 100px;
+  height: 100px;
+  text-align: center;
+  line-height: 100px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #fff;
+  position: relative;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  margin-right: 4px;
+}
+.demo-upload-list img {
+  width: 100%;
+  height: 100%;
+}
+.demo-upload-list-cover {
+  display: none;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+.demo-upload-list:hover .demo-upload-list-cover {
+  display: block;
+}
+.demo-upload-list-cover i {
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+  margin: 0 10px;
+}
+
+.imglist {
+  position: relative;
+  display: inline-block;
+  width: 100px;
+}
+
+.san_top {
+  margin: 0 10px;
+  text-indent: 10px;
+  border-bottom: 1px solid #ccc;
+  font-size: 16px;
+  height: 40px;
+  line-height: 40px;
+  margin-bottom: 10px;
+}
+</style>
